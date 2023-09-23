@@ -37,3 +37,4 @@
 # Build folder
 build/
 cpp/build/
+python/build/

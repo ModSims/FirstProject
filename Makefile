@@ -8,22 +8,30 @@ build_folder_check: check_conda_env
 	@if [ ! -d "cpp/build" ]; then \
 		mkdir -p cpp/build; \
 	fi
+	@if [ ! -d "python/build" ]; then \
+		mkdir -p python/build; \
+	fi
 
 configure: build_folder_check
 	cd cpp/build && cmake -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DEIGEN_TEST_NOQT=ON ..
+	cd python/build && cmake -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DEIGEN_TEST_NOQT=ON ..
 
 build: build_folder_check
 	cd cpp/build && make
+	cd python/build && make
 
 help:
 	cd cpp/build && make help
+	cd python/build && make help
 
 all_options:
 	cd cpp/build && cmake -LAH ..
+	cd python/build && cmake -LAH ..
 
 clean:
 	@rm -rf bin
 	@rm -rf cpp/build
+	@rm -rf python/build
 
 run:
 	./bin/kernel

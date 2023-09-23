@@ -5,7 +5,7 @@
 using namespace Solvers;
 using namespace Eigen;
 
-VectorXd Linear::solve(Ref<MatrixXd> A, Ref<VectorXd> x, Ref<VectorXd> b) {
+VectorXd Linear::solve(MatrixXd& A, VectorXd& x, VectorXd& b) {
     VectorXd error_list;
     double error_norm = 0;
     
@@ -18,6 +18,18 @@ VectorXd Linear::solve(Ref<MatrixXd> A, Ref<VectorXd> x, Ref<VectorXd> b) {
             error_list(error_list.size() - 1) = error_norm;
         } else {
             break;
+        }
+        if (error_list.size() > 5) {
+            bool same = true;
+            for (int i = 0; i < 5; i++) {
+                if (error_list(error_list.size() - 1 - i) != error_list(error_list.size() - 2 - i)) {
+                    same = false;
+                    break;
+                }
+            }
+            if (same) {
+                break;
+            }
         }
     }
     return error_list;

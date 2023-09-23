@@ -18,6 +18,8 @@ find_package(Eigen3 REQUIRED COMPONENTS CXX)
 # Create a library from the source files
 add_library(solvers STATIC ${SOLVERS_SOURCES})
 
+target_compile_options(solvers PRIVATE -fPIC) # Add this line to compile with -fPIC
+
 # Set include directories for the library
 target_include_directories(solvers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
@@ -32,6 +34,6 @@ set(EXECUTABLES
 )
 
 foreach(EXECUTABLE ${EXECUTABLES})
-    add_executable(solver_${EXECUTABLE} tests/${EXECUTABLE}.cpp)
-    target_link_libraries(solver_${EXECUTABLE} PRIVATE solvers PRIVATE Eigen3::Eigen)
+    add_executable(test_solver_${EXECUTABLE} tests/${EXECUTABLE}.cpp)
+    target_link_libraries(test_solver_${EXECUTABLE} PRIVATE solvers PRIVATE Eigen3::Eigen)
 endforeach()

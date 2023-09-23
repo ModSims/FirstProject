@@ -3,7 +3,7 @@
 using namespace Solvers;
 using namespace Eigen;
 
-VectorXd Jacobi::phi(Ref<MatrixXd> A, Ref<VectorXd> x, Ref<VectorXd> b) {
+VectorXd Jacobi::phi(MatrixXd& A, VectorXd& x, VectorXd& b) {
     MatrixXd D = A.diagonal().asDiagonal();
     MatrixXd M = D.inverse() * (D - A);
     MatrixXd N = D.inverse(); 
