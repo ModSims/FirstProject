@@ -39,6 +39,10 @@ run:
 export_env:
 	conda env export --no-builds | grep -v "prefix" > environment.yml
 
+symlink_python:
+	@rm -f $(shell pwd)/python/tests/ModSims.so
+	ln -s $(shell pwd)/python/build/*.so $(shell pwd)/python/tests/ModSims.so
+
 all: build_folder_check configure build run
 
 .PHONY: build_folder_check build configure clean run
