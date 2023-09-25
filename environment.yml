@@ -1,14 +1,17 @@
 name: ModSims
 channels:
+  - intel
   - conda-forge
-  - bioconda
+  - https://conda.anaconda.org/intel
+  - https://conda.anaconda.org/conda-forge
   - defaults
 dependencies:
   - _libgcc_mutex=0.1
   - _openmp_mutex=4.5
   - bzip2=1.0.8
   - c-ares=1.19.1
-  - ca-certificates=2023.7.22
+  - ca-certificates=2023.5.7
+  - cmake=3.27.6
   - eigen=3.4.0
   - hdf5=1.14.2
   - keyutils=1.6.1
@@ -30,6 +33,7 @@ dependencies:
   - libssh2=1.11.0
   - libstdcxx-ng=13.2.0
   - libuuid=2.38.1
+  - libuv=1.46.0
   - libzlib=1.2.13
   - mpi=1.0
   - ncurses=6.4
@@ -41,6 +45,7 @@ dependencies:
   - python=3.11.5
   - python_abi=3.11
   - readline=8.2
+  - rhash=1.4.4
   - setuptools=68.2.2
   - tk=8.6.12
   - tzdata=2023c
