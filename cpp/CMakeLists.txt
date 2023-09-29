@@ -1,5 +1,14 @@
 cmake_minimum_required(VERSION 3.16 FATAL_ERROR)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+set(
+  CMAKE_CXX_FLAGS
+  "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wno-register -Wno-comment -fPIC \
+  -march=native -Wfatal-errors -fvisibility=hidden"
+)
+
 project(ModSims VERSION 1.0.0 LANGUAGES CXX)
 
 # Set the binary and runtime output directories
