@@ -5,32 +5,36 @@
 using namespace Solvers;
 using namespace Eigen;
 
+
+/*
+A: given matrix
+x: initial guess
+b: right hand side
+*/
 VectorXd Linear::solve(MatrixXd& A, VectorXd& x, VectorXd& b) {
-    VectorXd error_list;
-    double error_norm = 0;
-    
-    while (true) {
-        VectorXd x_new = phi(A, x, b);
-        error_norm = (x_new - x).norm();
+    VectorXd resid_list;
+    double resid = 0;
+    int max_iterations = 100000;
+    int iteration = 0;
+
+    // first iteration for while loop to work properly
+    VectorXd x_new = phi(A, x, b);
+    resid = (x_new - x).norm();
+    x = x_new;
+    resid_list.conservativeResize(resid_list.size() + 1);
+    resid_list(resid_list.size() - 1) = resid;
+    while (resid >= 1e-14 && iteration < max_iterations) {
+        x_new = phi(A, x, b);
+        resid = (x_new - x).norm();
         x = x_new;
-        if (error_norm > 1e-14 && error_norm < 1e14) {
-            error_list.conservativeResize(error_list.size() + 1);
-            error_list(error_list.size() - 1) = error_norm;
-        } else {
-            break;
-        }
-        if (error_list.size() > 5) {
-            bool same = true;
-            for (int i = 0; i < 5; i++) {
-                if (error_list(error_list.size() - 1 - i) != error_list(error_list.size() - 2 - i)) {
-                    same = false;
-                    break;
-                }
-            }
-            if (same) {
-                break;
-            }
-        }
+
+        resid_list.conservativeResize(resid_list.size() + 1);
+        resid_list(resid_list.size() - 1) = resid;
+
+        ++iteration;
     }
-    return error_list;
+    std::cout << "Number of iterations: " << iteration;
+    std::cout << " Residual: " << resid << std::endl;
+
+    return resid_list;
 }
