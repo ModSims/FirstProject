@@ -22,10 +22,8 @@ find_package(Eigen3 REQUIRED COMPONENTS CXX)
 find_package(pybind11 REQUIRED)
 pybind11_add_module(${PROJECT_NAME} src/main.cpp)
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../cpp/solvers/include)
-
 # Link Eigen3 to the python library
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE Eigen3::Eigen
-    PRIVATE "${CMAKE_SOURCE_DIR}/../cpp/build/solvers/libsolvers.a"
+    PRIVATE solvers
 )
