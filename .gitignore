@@ -42,4 +42,5 @@ cpp/build/
 python/build/
 out/
 
-__pycache__
+*.mtx
+__pycache__/

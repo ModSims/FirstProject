@@ -19,12 +19,18 @@ VectorXd Linear::solve(MatrixXd& A, VectorXd& x, VectorXd& b) {
     int iteration = 0;
     double resid = 0;
 
+    // print initial iteration and residual
+    std::cout << "Iteration: " << iteration << " Residual: " << resid << std::endl;
+
     do {
         VectorXd x_new = phi(A, x, b);
         resid = (b - A * x_new).norm();
         x = x_new;
 
         resid_list(iteration) = resid;
+
+        // print current iteration and residual
+        std::cout << "Iteration: " << iteration << " Residual: " << resid << std::endl;
         
         ++iteration;
     } while (resid >= tolerance && iteration < max_iterations);

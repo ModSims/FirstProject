@@ -16,4 +16,13 @@ PYBIND11_MODULE(ModSims, m) {
     py::class_<Solvers::GaussSeidel>(m, "GaussSeidel")
         .def(py::init<>())
         .def("solve", &Solvers::GaussSeidel::solve);
+
+    m.def("long running_func", []()
+    {
+        for (;;) {
+            if (PyErr_CheckSignals() != 0)
+                throw py::error_already_set();
+            // Long running iteration
+        }
+    });
 }
