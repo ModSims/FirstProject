@@ -27,3 +27,6 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE Eigen3::Eigen
     PRIVATE solvers
 )
+
+# Add pytest test cases
+add_test(NAME python_tests COMMAND pytest ${CMAKE_SOURCE_DIR}/pybind/tests)

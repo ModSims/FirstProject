@@ -1,9 +1,11 @@
+#include <catch2/catch_test_macros.hpp>
+
 #include "solvers.h"
 #include <iostream>
 
-using namespace Eigen;
+using namespace Solvers;
 
-int main() {
+TEST_CASE( "GaussSeidel solver", "[GaussSeidel]" ) {
     // Initialize the problem
     MatrixXd A(2, 2);
     A << 0.7, -0.4,
@@ -19,8 +21,6 @@ int main() {
     auto solver = Solvers::GaussSeidel();
     VectorXd y = solver.solve(A, x, b);
     
-    // Print the length of the error list
-    std::cout << y.size() << std::endl;
-    
-    return 0;
+    REQUIRE( y.size() >= 23 );
+    REQUIRE( y.size() <= 27 );
 }
