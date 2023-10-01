@@ -41,3 +41,5 @@ lib/
 cpp/build/
 python/build/
 out/
+
+__pycache__

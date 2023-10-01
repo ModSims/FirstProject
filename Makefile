@@ -15,6 +15,9 @@ configure: build_folder_check
 build: build_folder_check
 	cd cpp/build && make
 
+test: build_folder_check
+	cd cpp/build && make test
+
 help:
 	cd cpp/build && make help
 
@@ -28,11 +31,10 @@ clean:
 export_env:
 	conda env export --no-builds | grep -v "prefix" > environment.yml
 
-symlink_python:
-	@rm -f $(shell pwd)/python/ModSims.so
-	ln -s $(shell pwd)/out/lib/ModSims*.so $(shell pwd)/python/ModSims.so
+install_python_library:
+	conda develop $(shell pwd)/out/lib/
 
-all: build_folder_check configure build symlink_python
+all: build_folder_check configure build install_python_library test
 
 .PHONY: build_folder_check build configure clean
 
