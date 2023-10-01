@@ -40,3 +40,4 @@ bin/
 lib/
 cpp/build/
 python/build/
+out/

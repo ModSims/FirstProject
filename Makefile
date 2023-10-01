@@ -30,7 +30,7 @@ export_env:
 
 symlink_python:
 	@rm -f $(shell pwd)/python/ModSims.so
-	ln -s $(shell pwd)/lib/ModSims*.so $(shell pwd)/python/ModSims.so
+	ln -s $(shell pwd)/out/lib/ModSims*.so $(shell pwd)/python/ModSims.so
 
 all: build_folder_check configure build symlink_python
 
