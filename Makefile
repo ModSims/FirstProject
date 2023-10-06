@@ -32,7 +32,7 @@ export_env:
 	conda env export --no-builds | grep -v "prefix" > environment.yml
 
 install_python_library:
-	conda develop -u $(shell pwd)/out/lib/
+	conda develop -u $(shell pwd)/out/lib/ || true
 	conda develop $(shell pwd)/out/lib/
 
 all: build_folder_check configure build install_python_library test
