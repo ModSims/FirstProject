@@ -1,7 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 
-namespace Math {
+namespace Maths {
     using namespace Eigen;
 
     class Radians {

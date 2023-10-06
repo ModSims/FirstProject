@@ -2,15 +2,15 @@
 #include <iostream>
 #include <Eigen/Dense>
 #include <chrono>
-#include "math.h"
+#include "maths.h"
 
-using namespace Math;
+using namespace Maths;
 
 TEST_CASE( "Radian Calculator", "[Radians]" ) {
     int iterations = 10000;
     std::vector<double> spectral_radius_1(iterations);
     std::vector<double> spectral_radius_2(iterations);
-    Math::Radians radiansCalculator;
+    Maths::Radians radiansCalculator;
 
     for (int i = 0; i < iterations; ++i) {
         // make a random matrix

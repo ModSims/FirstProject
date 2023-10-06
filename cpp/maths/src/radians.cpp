@@ -1,12 +1,12 @@
 #include <iostream>
 #include <Eigen/Dense>
 
-#include "math.h"
+#include "maths.h"
 
-using namespace Math;
+using namespace Maths;
 using namespace Eigen;
 
-double calculateSpectralRadius(Eigen::MatrixXd& A) {
+double Radians::calculateSpectralRadius(Eigen::MatrixXd& A) {
     Eigen::EigenSolver<Eigen::MatrixXd> solver(A);
     Eigen::VectorXd eigenvalues = solver.eigenvalues().real(); // Get real part of eigenvalues
 
@@ -15,7 +15,7 @@ double calculateSpectralRadius(Eigen::MatrixXd& A) {
     return spectralRadius;
 }
 
-double gelfands_spectral_approximation(Eigen::MatrixXd& matrix, int max_iterations = 100) {
+double Radians::gelfands_spectral_approximation(Eigen::MatrixXd& matrix, int max_iterations) {
     Eigen::MatrixXd matrix_power = matrix;
     double prev_term = 0.0;
 

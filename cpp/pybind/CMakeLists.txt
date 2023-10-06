@@ -18,7 +18,7 @@ target_link_libraries(${PROJECT_NAME}
     PRIVATE Eigen3::Eigen
     PRIVATE kernel
     PRIVATE solvers
-    PRIVATE math
+    PRIVATE maths
 )
 
 # Add pytest test cases
