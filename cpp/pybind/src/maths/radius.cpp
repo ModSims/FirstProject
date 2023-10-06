@@ -2,7 +2,7 @@
 
 using namespace Maths;
 
-void AddRadians(py::module &m)
+void AddRadius(py::module &m)
 {
     py::class_<Maths::Radius>(m, "Radius")
         .def(py::init<>())
