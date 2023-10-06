@@ -5,6 +5,6 @@ from PyModSims import Maths
 
 path = os.path.dirname(os.path.abspath(__file__))
 
-def test_radians_maths():
+def test_radius_maths():
     
     pass

@@ -6,7 +6,7 @@ project(maths)
 
 # Define the source files for the library
 set(MATHS_SOURCES
-    src/radians.cpp
+    src/radius.cpp
 )
 
 # External packages
@@ -26,7 +26,7 @@ target_link_libraries(maths PRIVATE Eigen3::Eigen)
 
 # List of executable targets and their respective source files
 set(EXECUTABLES
-    radians
+    radius
 )
 
 include(CTest)

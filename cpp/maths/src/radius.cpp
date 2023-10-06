@@ -6,7 +6,7 @@
 using namespace Maths;
 using namespace Eigen;
 
-double Radians::calculateSpectralRadius(Eigen::MatrixXd& A) {
+double Radius::calculateSpectralRadius(Eigen::MatrixXd& A) {
     Eigen::EigenSolver<Eigen::MatrixXd> solver(A);
     Eigen::VectorXd eigenvalues = solver.eigenvalues().real(); // Get real part of eigenvalues
 
@@ -15,7 +15,7 @@ double Radians::calculateSpectralRadius(Eigen::MatrixXd& A) {
     return spectralRadius;
 }
 
-double Radians::gelfands_spectral_approximation(Eigen::MatrixXd& matrix, int max_iterations) {
+double Radius::gelfands_spectral_approximation(Eigen::MatrixXd& matrix, int max_iterations) {
     Eigen::MatrixXd matrix_power = matrix;
     double prev_term = 0.0;
 

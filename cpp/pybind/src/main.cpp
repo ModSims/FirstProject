@@ -1,5 +1,6 @@
 #include "pybind_kernel.h"
 #include "pybind_solvers.h"
+#include "pybind_maths.h"
 
 PYBIND11_MODULE(PyModSims, m) {
     m.doc() = "Python bindings for the C++ simulation code";
@@ -7,4 +8,5 @@ PYBIND11_MODULE(PyModSims, m) {
     AddJacobiSolver(m);
     AddGaussSeidelSolver(m);
     AddTrivialSolver(m);
+    AddRadius(m);
 }
