@@ -3,7 +3,7 @@ import random
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-import ModSims
+import PyModSims
 
 def generate_vector(matrix, randomize = False):
     if randomize:
@@ -15,10 +15,9 @@ A = mmread('bcsstm03.mtx').toarray()
 x = generate_vector(A, randomize = True)
 b = generate_vector(A, randomize = False)
 
-print(A)
-
-solver = ModSims.Jacobi()
-errors = solver.solve(A, x, b)
+dt = 0.001
+solver = PyModSims.Jacobi.simulate(A, b, x, dt)
+errors = solver.getResidualList()
 
 path = os.path.dirname(os.path.abspath(__file__))
 plt.plot(errors, 'r-')

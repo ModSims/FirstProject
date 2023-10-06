@@ -3,6 +3,7 @@
 #include "solvers.h"
 #include <iostream>
 
+using namespace Kernel;
 using namespace Solvers;
 
 TEST_CASE( "GaussSeidel solver", "[GaussSeidel]" ) {
@@ -18,9 +19,16 @@ TEST_CASE( "GaussSeidel solver", "[GaussSeidel]" ) {
     b << 0.3, 0.3;
     
     // Solve the problem
-    auto solver = Solvers::GaussSeidel();
-    VectorXd y = solver.solve(A, x, b);
+    double dt = 0.0001;
+    Timer timer = Timer(dt);
+    auto solver = Solvers::GaussSeidel(A, x, b, &timer);
+
+    timer.start();
+    while (solver.forward());
+    timer.stop();
+
+    std::cout << "Gauss Seidel solver took " << timer.getCurrentTimeStep() << " iterations and " << timer.getDurationInSeconds() << " seconds." << std::endl;
     
-    REQUIRE( y.size() >= 23 );
-    REQUIRE( y.size() <= 27 );
+    REQUIRE( timer.getCurrentTimeStep() >= 23 );
+    REQUIRE( timer.getCurrentTimeStep() <= 27 );
 }

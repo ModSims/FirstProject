@@ -3,6 +3,7 @@
 #include "solvers.h"
 #include <iostream>
 
+using namespace Kernel;
 using namespace Solvers;
 
 TEST_CASE( "Jacobi solver", "[Jacobi]" ) {
@@ -18,9 +19,16 @@ TEST_CASE( "Jacobi solver", "[Jacobi]" ) {
     b << 0.3, 0.3;
     
     // Solve the problem
-    auto solver = Solvers::Jacobi();
-    VectorXd y = solver.solve(A, x, b);
+    double dt = 0.0001;
+    Timer timer = Timer(dt);
+    auto solver = Solvers::Jacobi(A, x, b, &timer);
+
+    timer.start();
+    while (solver.forward());
+    timer.stop();
+
+    std::cout << "Jacobi solver took " << timer.getCurrentTimeStep() << " iterations and " << timer.getDurationInSeconds() << " seconds." << std::endl;
     
-    REQUIRE( y.size() >= 45 );
-    REQUIRE( y.size() <= 55 );
+    REQUIRE( timer.getCurrentTimeStep() >= 45 );
+    REQUIRE( timer.getCurrentTimeStep() <= 55 );
 }

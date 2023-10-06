@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from ModSims import Jacobi
+from PyModSims import Jacobi
 
 path = os.path.dirname(os.path.abspath(__file__))
 
@@ -10,8 +10,9 @@ def test_gauss_seidel_solver():
     b = np.array([0.3, 0.3])
     x = np.array([21.0, -19.0])
 
-    solver = Jacobi()
-    errors = solver.solve(A, b, x)
+    dt = 0.001
+    solver = Jacobi.simulate(A, b, x, dt)
+    errors = solver.getResidualList()
 
     assert len(errors) >= 45
     assert len(errors) <= 55

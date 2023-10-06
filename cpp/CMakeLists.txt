@@ -20,5 +20,6 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/../out/lib")
 enable_testing()
 
 # Include libraries
+add_subdirectory(kernel)
 add_subdirectory(solvers)
 add_subdirectory(pybind)

@@ -3,6 +3,7 @@
 #include "solvers.h"
 #include <iostream>
 
+using namespace Kernel;
 using namespace Solvers;
 
 TEST_CASE( "Trivial solver", "[trivial]" ) {
@@ -18,9 +19,16 @@ TEST_CASE( "Trivial solver", "[trivial]" ) {
     b << 0.3, 0.3;
     
     // Solve the problem
-    auto solver = Solvers::Trivial();
-    VectorXd y = solver.solve(A, x, b);
+    double dt = 0.0001;
+    Timer timer = Timer(dt);
+    auto solver = Solvers::Trivial(A, x, b, &timer);
+
+    timer.start();
+    while (solver.forward());
+    timer.stop();
+
+    std::cout << "Trivial solver took " << timer.getCurrentTimeStep() << " iterations and " << timer.getDurationInSeconds() << " seconds." << std::endl;
     
-    REQUIRE( y.size() >= 90 );
-    REQUIRE( y.size() <= 110 );
+    REQUIRE( timer.getCurrentTimeStep() >= 90 );
+    REQUIRE( timer.getCurrentTimeStep() <= 110 );
 }
