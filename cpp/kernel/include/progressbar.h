@@ -48,15 +48,15 @@ class ProgressBar {
       // default destructor
       ~ProgressBar()                             = default;
 
-      // delete everything else
+      // copy and move constructors
       ProgressBar           (ProgressBar const&) = delete;
       ProgressBar& operator=(ProgressBar const&) = delete;
-      ProgressBar           (ProgressBar&&)      = delete;
-      ProgressBar& operator=(ProgressBar&&)      = delete;
+      inline ProgressBar(ProgressBar&&) noexcept = default;
 
       // default constructor, must call set_niter later
       inline ProgressBar();
       inline ProgressBar(int n, bool showbar=true, std::ostream& out=std::cerr);
+      
 
       // reset bar to use it again
       inline void reset();

@@ -10,6 +10,7 @@ set(SOLVERS_SOURCES
     src/trivial.cpp
     src/jacobi.cpp
     src/gauss_seidel.cpp
+    src/richardson.cpp
 )
 
 # External packages
@@ -32,6 +33,7 @@ set(EXECUTABLES
     trivial
     jacobi
     gauss_seidel
+    richardson
 )
 
 include(CTest)

@@ -7,12 +7,11 @@ using namespace Solvers;
 using namespace Eigen;
 
 double IterationSolver::m_tolerance = 1e-14;
-int IterationSolver::m_max_iterations = 100000;
 
-IterationSolver::IterationSolver(MatrixXd A, VectorXd x, VectorXd b, Kernel::Timer *timer)
-    : m_timer(timer), m_A(A), m_x(x), m_b(b)
+IterationSolver::IterationSolver(MatrixXd A, VectorXd x, VectorXd b, int max_iterations, double omega, Kernel::Timer *timer)
+    : m_timer(timer), m_A(A), m_x(x), m_b(b), m_max_iterations(max_iterations), m_omega(omega), m_progressbar(max_iterations)
 {
-    m_residual_list = new VectorXd(m_max_iterations);
+    m_residuals = new VectorXd(m_max_iterations);
 }
 
 bool IterationSolver::forward()
@@ -23,7 +22,7 @@ bool IterationSolver::forward()
         || m_timer->getCurrentTimeStep() + 1 >= m_max_iterations
     )
     {
-        m_residual_list->conservativeResize(m_timer->getCurrentTimeStep());
+        m_residuals->conservativeResize(m_timer->getCurrentTimeStep());
         return false;
     }
 
@@ -31,20 +30,31 @@ bool IterationSolver::forward()
     double residual = (m_b - m_A * m_x).norm();
 
     int newTimeStep = m_timer->getCurrentTimeStep() + 1;
-    (*m_residual_list)(newTimeStep) = residual;
+    (*m_residuals)(newTimeStep) = residual;
 
     m_timer->update();
+    m_progressbar.update();
     return true;
 }
 
-VectorXd *IterationSolver::getResidualList()
+VectorXd *IterationSolver::getResiduals()
 {
-    return m_residual_list;
+    return m_residuals;
 }
 
 double *IterationSolver::getLastResidual()
 {
-    return m_residual_list->data() + m_timer->getCurrentTimeStep();
+    return m_residuals->data() + m_timer->getCurrentTimeStep();
+}
+
+double IterationSolver::getTolerance()
+{
+    return m_tolerance;
+}
+
+double IterationSolver::getOmega()
+{
+    return m_omega;
 }
 
 void IterationSolver::setX(VectorXd x)

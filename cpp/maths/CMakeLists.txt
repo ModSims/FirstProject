@@ -6,7 +6,8 @@ project(maths)
 
 # Define the source files for the library
 set(MATHS_SOURCES
-    src/radius.cpp
+    src/spectral.cpp
+    src/matrix.cpp
 )
 
 # External packages
@@ -26,7 +27,9 @@ target_link_libraries(maths PRIVATE Eigen3::Eigen)
 
 # List of executable targets and their respective source files
 set(EXECUTABLES
-    radius
+    spectral
+    matrix
+    icd
 )
 
 include(CTest)

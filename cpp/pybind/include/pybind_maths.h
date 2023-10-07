@@ -1,8 +1,9 @@
 #pragma once
 
-#include <pybind11/pybind11.h>
+#include <pybind11/eigen.h>
 #include "maths.h"
 
 namespace py = pybind11;
 
-void AddRadius(py::module &m);
+void AddSpectral(py::module &m);
+void AddMatrix(py::module &m);

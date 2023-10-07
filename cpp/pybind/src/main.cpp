@@ -8,5 +8,7 @@ PYBIND11_MODULE(PyModSims, m) {
     AddJacobiSolver(m);
     AddGaussSeidelSolver(m);
     AddTrivialSolver(m);
-    AddRadius(m);
+    AddRichardsonSolver(m);
+    AddSpectral(m);
+    AddMatrix(m);
 }

@@ -20,8 +20,10 @@ TEST_CASE( "Jacobi solver", "[Jacobi]" ) {
     
     // Solve the problem
     double dt = 0.0001;
+    int max_iterations = 100;
+    double omega = 1.0;
     Timer timer = Timer(dt);
-    auto solver = Solvers::Jacobi(A, x, b, &timer);
+    auto solver = Solvers::Jacobi(A, x, b, max_iterations, omega, &timer);
 
     timer.start();
     while (solver.forward());

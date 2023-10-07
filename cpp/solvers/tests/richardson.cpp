@@ -6,7 +6,7 @@
 using namespace Kernel;
 using namespace Solvers;
 
-TEST_CASE( "Trivial solver", "[trivial]" ) {
+TEST_CASE( "Richardson solver", "[Richardson]" ) {
     // Initialize the problem
     MatrixXd A(2, 2);
     A << 0.7, -0.4,
@@ -21,16 +21,16 @@ TEST_CASE( "Trivial solver", "[trivial]" ) {
     // Solve the problem
     double dt = 0.0001;
     int max_iterations = 100;
-    double omega = 1.0;
+    double omega = 1.6666; // lambda_max / lambda_min = 5 / 3
     Timer timer = Timer(dt);
-    auto solver = Solvers::Trivial(A, x, b, max_iterations, omega, &timer);
+    auto solver = Solvers::Richardson(A, x, b, max_iterations, omega, &timer);
 
     timer.start();
     while (solver.forward());
     timer.stop();
 
-    std::cout << "Trivial solver took " << timer.getCurrentTimeStep() << " iterations and " << timer.getDurationInSeconds() << " seconds." << std::endl;
+    std::cout << "Richardson solver took " << timer.getCurrentTimeStep() << " iterations and " << timer.getDurationInSeconds() << " seconds." << std::endl;
     
-    REQUIRE( timer.getCurrentTimeStep() >= 90 );
-    REQUIRE( timer.getCurrentTimeStep() <= 110 );
+    REQUIRE( timer.getCurrentTimeStep() >= 50 );
+    REQUIRE( timer.getCurrentTimeStep() <= 55 );
 }

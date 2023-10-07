@@ -3,17 +3,17 @@
 using namespace Kernel;
 using namespace Solvers;
 
-void AddJacobiSolver(py::module &m) {
-    py::class_<Jacobi>(m, "Jacobi")
+void AddRichardsonSolver(py::module &m) {
+    py::class_<Richardson>(m, "Richardson")
         .def(py::init<Eigen::MatrixXd, Eigen::VectorXd, Eigen::VectorXd, int, double, Kernel::Timer*>())
-        .def("phi", &Jacobi::phi)
-        .def("forward", &Jacobi::forward)
-        .def("setX", &Jacobi::setX)
-        .def("getResiduals", &Jacobi::getResiduals)
-        .def("getLastResidual", &Jacobi::getLastResidual)
+        .def("phi", &Richardson::phi)
+        .def("forward", &Richardson::forward)
+        .def("setX", &Richardson::setX)
+        .def("getResiduals", &Richardson::getResiduals)
+        .def("getLastResidual", &Richardson::getLastResidual)
         .def("simulate", [](Eigen::MatrixXd A, Eigen::VectorXd x, Eigen::VectorXd b, int max_iterations, double omega, double dt) {
             Timer timer = Timer(dt);
-            Jacobi solver = Jacobi(A, x, b, max_iterations, omega, &timer);
+            Richardson solver = Richardson(A, x, b, max_iterations, omega, &timer);
             ProgressBar progressBar = ProgressBar(solver.getMaxIterations());
             timer.start();
             while (solver.forward()) {
@@ -21,7 +21,7 @@ void AddJacobiSolver(py::module &m) {
                 if (PyErr_CheckSignals() != 0) {
                     throw py::error_already_set();
                 }
-                progressBar.update();
+                //progressBar.update();
             }
             timer.stop();
             return solver;

@@ -17,7 +17,7 @@ b = generate_vector(A, randomize = False)
 
 dt = 0.001
 solver = PyModSims.Jacobi.simulate(A, b, x, dt)
-errors = solver.getResidualList()
+errors = solver.getResiduals()
 
 path = os.path.dirname(os.path.abspath(__file__))
 plt.plot(errors, 'r-')
