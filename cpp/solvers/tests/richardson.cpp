@@ -7,7 +7,7 @@ using namespace Kernel;
 using namespace Solvers;
 
 TEST_CASE( "Richardson solver", "[Richardson]" ) {
-    // Initialize the problem
+    // Initialize the problem,
     MatrixXd A(2, 2);
     A << 0.7, -0.4,
         -0.2,  0.5;
