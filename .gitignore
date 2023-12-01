@@ -44,3 +44,4 @@ out/
 
 *.mtx
 __pycache__/
+*.dat

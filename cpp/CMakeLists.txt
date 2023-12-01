@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.25)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_BUILD_TYPE Debug)
 set(
   CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} -O3 -Wall -Wextra -Wno-register -Wno-comment -fPIC \
@@ -24,3 +25,5 @@ add_subdirectory(kernel)
 add_subdirectory(solvers)
 add_subdirectory(pybind)
 add_subdirectory(maths)
+add_subdirectory(cfd)
+add_subdirectory(homework)

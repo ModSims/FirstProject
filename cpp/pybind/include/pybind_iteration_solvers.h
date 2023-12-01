@@ -1,7 +1,7 @@
 #pragma once
 
 #include <pybind11/eigen.h>
-#include "solvers.h"
+#include "iteration_solvers.h"
 
 namespace py = pybind11;
 

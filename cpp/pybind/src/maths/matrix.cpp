@@ -12,5 +12,6 @@ void AddMatrix(py::module &m)
     py::class_<Maths::Matrix::IncompleteCholeskyDecomposition>(m_matrix, "IncompleteCholeskyDecomposition")
         .def(py::init<Eigen::MatrixXd&>())
         .def("getL", &Maths::Matrix::IncompleteCholeskyDecomposition::getL)
-        .def("getF", &Maths::Matrix::IncompleteCholeskyDecomposition::getF);
+        .def("getF", &Maths::Matrix::IncompleteCholeskyDecomposition::getF)
+        .def("getP", &Maths::Matrix::IncompleteCholeskyDecomposition::getP);
 }

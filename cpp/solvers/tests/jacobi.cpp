@@ -1,6 +1,6 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "solvers.h"
+#include "iteration_solvers.h"
 #include <iostream>
 
 using namespace Kernel;

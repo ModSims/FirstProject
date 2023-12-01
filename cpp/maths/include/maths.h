@@ -21,9 +21,11 @@ namespace Maths {
             IncompleteCholeskyDecomposition(IncompleteCholeskyDecomposition&& other) : L(other.L), F(other.F) {}
             Eigen::MatrixXd getL();
             Eigen::MatrixXd getF();
+            Eigen::MatrixXd getP();
         private:
             Eigen::MatrixXd L;
             Eigen::MatrixXd F;
+            Eigen::MatrixXd P;
         };
     };
 }

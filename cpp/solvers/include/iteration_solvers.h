@@ -1,7 +1,6 @@
 #pragma once
 #include <Eigen/Dense>
 #include "kernel.h"
-#include "progressbar.h"
 
 namespace Solvers
 {
@@ -19,8 +18,7 @@ namespace Solvers
             m_x(std::move(other.m_x)),
             m_b(std::move(other.m_b)),
             m_max_iterations(other.m_max_iterations),
-            m_omega(other.m_omega),
-            m_progressbar(std::move(other.m_progressbar))
+            m_omega(other.m_omega)
         {
             // Nullify other's pointers
             other.m_timer = nullptr;
@@ -36,7 +34,8 @@ namespace Solvers
         int getMaxIterations() const;
         double getTolerance();
         double getOmega();
-        static double m_tolerance;
+        VectorXd *getX();
+        const double m_tolerance = 1e-14;
 
     private:
         Kernel::Timer *m_timer;
@@ -46,7 +45,6 @@ namespace Solvers
         VectorXd m_b;
         int m_max_iterations;
         double m_omega;
-        ProgressBar m_progressbar;
     };
 
     class Trivial : public IterationSolver

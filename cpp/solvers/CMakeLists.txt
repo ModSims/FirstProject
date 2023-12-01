@@ -6,11 +6,15 @@ project(solvers)
 
 # Define the source files for the library
 set(SOLVERS_SOURCES
-    src/iteration_solver.cpp
-    src/trivial.cpp
-    src/jacobi.cpp
-    src/gauss_seidel.cpp
-    src/richardson.cpp
+    src/iteration_solvers/iteration_solver.cpp
+    src/iteration_solvers/trivial.cpp
+    src/iteration_solvers/jacobi.cpp
+    src/iteration_solvers/gauss_seidel.cpp
+    src/iteration_solvers/richardson.cpp
+
+    src/krylov_solvers/krylov_solver.cpp
+    src/krylov_solvers/conjugate_gradient.cpp
+    src/krylov_solvers/preconditioned_conjugate_gradient.cpp
 )
 
 # External packages
@@ -26,7 +30,7 @@ target_compile_options(solvers PRIVATE -fPIC) # Add this line to compile with -f
 target_include_directories(solvers PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 # Link Eigen3 to the solvers library
-target_link_libraries(solvers PRIVATE Eigen3::Eigen PRIVATE kernel)
+target_link_libraries(solvers PRIVATE Eigen3::Eigen PRIVATE kernel PRIVATE maths)
 
 # List of executable targets and their respective source files
 set(EXECUTABLES
@@ -34,6 +38,8 @@ set(EXECUTABLES
     jacobi
     gauss_seidel
     richardson
+    conjugate_gradient
+    preconditioned_conjugate_gradient
 )
 
 include(CTest)
@@ -44,6 +50,7 @@ foreach(EXECUTABLE ${EXECUTABLES})
                           PRIVATE kernel
                           PRIVATE solvers
                           PRIVATE Eigen3::Eigen
+                          PRIVATE maths
                           PRIVATE Catch2::Catch2WithMain
     )
     catch_discover_tests(test_solver_${EXECUTABLE})

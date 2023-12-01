@@ -1,4 +1,4 @@
-#include "solvers.h"
+#include "iteration_solvers.h"
 
 #include <iostream>
 #include <vector>
@@ -6,10 +6,8 @@
 using namespace Solvers;
 using namespace Eigen;
 
-double IterationSolver::m_tolerance = 1e-14;
-
 IterationSolver::IterationSolver(MatrixXd A, VectorXd x, VectorXd b, int max_iterations, double omega, Kernel::Timer *timer)
-    : m_timer(timer), m_A(A), m_x(x), m_b(b), m_max_iterations(max_iterations), m_omega(omega), m_progressbar(max_iterations)
+    : m_timer(timer), m_A(A), m_x(x), m_b(b), m_max_iterations(max_iterations), m_omega(omega)
 {
     m_residuals = new VectorXd(m_max_iterations);
 }
@@ -33,7 +31,6 @@ bool IterationSolver::forward()
     (*m_residuals)(newTimeStep) = residual;
 
     m_timer->update();
-    m_progressbar.update();
     return true;
 }
 
@@ -60,6 +57,11 @@ double IterationSolver::getOmega()
 void IterationSolver::setX(VectorXd x)
 {
     m_x = x;
+}
+
+VectorXd *IterationSolver::getX()
+{
+    return &m_x;
 }
 
 int IterationSolver::getMaxIterations() const

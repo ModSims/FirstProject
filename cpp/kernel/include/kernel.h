@@ -1,7 +1,9 @@
 #pragma once
 #include <chrono>
+#include <Eigen/Dense>
 
 namespace Kernel {
+    using namespace Eigen;
     class Timer {
     public:
         Timer(double dt) : m_dt(dt) {};
@@ -18,4 +20,7 @@ namespace Kernel {
         int m_timeSteps = 0;
         double m_dt = 0.0001;
     };
+
+    void saveMatrix(const char* filename, MatrixXd* matrix);
+    void saveVector(const char* filename, VectorXd* vector);
 }

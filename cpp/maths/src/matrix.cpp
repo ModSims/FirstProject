@@ -73,3 +73,9 @@ Eigen::MatrixXd Maths::Matrix::IncompleteCholeskyDecomposition::getL() {
 Eigen::MatrixXd Maths::Matrix::IncompleteCholeskyDecomposition::getF() {
     return this->F;
 }
+
+
+Eigen::MatrixXd Maths::Matrix::IncompleteCholeskyDecomposition::getP() {
+    this->P = L.transpose().inverse() * L.inverse();
+    return this->P;
+}

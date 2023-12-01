@@ -1,4 +1,4 @@
-#include "solvers.h"
+#include "iteration_solvers.h"
 
 using namespace Solvers;
 using namespace Eigen;
@@ -12,3 +12,4 @@ VectorXd GaussSeidel::phi(MatrixXd& A, VectorXd& x, VectorXd& b) {
 
     return M * x + N * b;
 }
+ 
