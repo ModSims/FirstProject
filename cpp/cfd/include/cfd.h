@@ -4,6 +4,25 @@
 
 namespace CFD {
     using namespace Eigen;
+
+    enum FlagFieldMask {
+        CELL_FLUID = 0b11111,
+        FLUID_WEST = 0b00100,
+        FLUID_EAST = 0b01000,
+        FLUID_SOUTH = 0b00010,
+        FLUID_NORTH = 0b00001,
+        CELL_OBSTACLE = 0b00000,
+        OBSTACLE_WEST = 0b11011,
+        OBSTACLE_EAST = 0b11101,
+        OBSTACLE_SOUTH = 0b11110,
+        OBSTACLE_NORTH = 0b11100,
+        MASK_CELL_TYPE = 0b10000,
+        MASK_WEST = 0b00100,
+        MASK_EAST = 0b01000,
+        MASK_SOUTH = 0b00010,
+        MASK_NORTH = 0b00001
+    };
+
     class Simulation {
         public:
             Simulation(
@@ -71,11 +90,15 @@ namespace CFD {
             F = MatrixXd::Zero(imax + 2, jmax + 3);
             v = MatrixXd::Zero(imax + 3, jmax + 2);
             G = MatrixXd::Zero(imax + 3, jmax + 2);
+            u_interpolated = MatrixXd::Zero(imax + 2, jmax + 2);
+            v_interpolated = MatrixXd::Zero(imax + 2, jmax + 2);
+            flag_field = MatrixXi::Zero(imax + 2, jmax + 2);
         }
         double dx() const { return xlength / imax; }
         double dy() const { return ylength / jmax; }
         double findMaxAbsoluteU() const;
         double findMaxAbsoluteV() const;
+        void interpolateVelocity();
         int imax;
         int jmax;
         double xlength;
@@ -87,6 +110,9 @@ namespace CFD {
         MatrixXd v;
         MatrixXd F;
         MatrixXd G;
+        MatrixXd u_interpolated;
+        MatrixXd v_interpolated;
+        MatrixXi flag_field;
     };
     void selectDtAccordingToStabilityCondition(StaggeredGrid *grid, Simulation *sim);
     void computeF(StaggeredGrid *grid, Simulation *sim);

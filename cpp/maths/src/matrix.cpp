@@ -34,7 +34,6 @@ bool Maths::Matrix::isSPD(Eigen::MatrixXd& A) {
 }
 
 Maths::Matrix::IncompleteCholeskyDecomposition::IncompleteCholeskyDecomposition(Eigen::MatrixXd& A) {
-    double eps = 1e-10;
     this->L = Eigen::MatrixXd::Zero(A.rows(), A.cols());
     this->F = Eigen::MatrixXd::Zero(A.rows(), A.cols());
 
@@ -45,10 +44,8 @@ Maths::Matrix::IncompleteCholeskyDecomposition::IncompleteCholeskyDecomposition(
         }
         
         double lkk = sqrt(A(k, k) - row_sum);
-        if (abs(lkk) > eps) {
-            this->L(k, k) = lkk;
-            this->F(k, k) = 1/lkk;
-        }
+        this->L(k, k) = lkk;
+        this->F(k, k) = 1/lkk;
 
         for (int i = k + 1; i < A.rows(); ++i) {
             double col_sum = 0.0;
@@ -57,11 +54,8 @@ Maths::Matrix::IncompleteCholeskyDecomposition::IncompleteCholeskyDecomposition(
             }
 
             double lik = (1/lkk)*(A(i, k) - col_sum);
-
-            if (abs(lik) > eps) {
-                this->L(i, k) = lik;
-                this->F(i, k) = 1/lik;
-            }
+            this->L(i, k) = lik;
+            this->F(i, k) = 1/lik;
         }
     }
 }

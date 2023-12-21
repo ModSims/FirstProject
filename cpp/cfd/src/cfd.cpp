@@ -24,6 +24,14 @@ namespace CFD {
         }
         return max;
     }
+    void StaggeredGrid::interpolateVelocity() {
+        for (int i = 0; i < imax + 2; i++) {
+            for (int j = 0; j < jmax + 2; j++) {
+                u_interpolated(i, j) = (u(i, j) + u(i, j+1)) / 2;
+                v_interpolated(i, j) = (v(i, j) + v(i+1, j)) / 2;
+            }
+        }
+    }
     void selectDtAccordingToStabilityCondition(StaggeredGrid *grid, Simulation *sim) {
         double left = (sim->Re/2) * pow(((1/pow(grid->dx(), 2))+(1/pow(grid->dy(), 2))), -1);
         double middle = grid->dx() / grid->findMaxAbsoluteU();

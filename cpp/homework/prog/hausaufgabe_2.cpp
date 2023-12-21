@@ -99,22 +99,26 @@ int main(int argc, char** argv) {
 
     Timer timer_p256 = Timer(dt);
     auto solver_p256 = Solvers::PreconditionedConjugateGradient(std::get<0>(P256), std::get<1>(P256), std::get<2>(P256), &timer_p256);
-    solver_p256.setPreconditioner(Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P256)).getP());
+    MatrixXd C256 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P256)).getP();
+    solver_p256.setPreconditioner(C256);
     solver_p256.prepareSolver();
 
     Timer timer_p512 = Timer(dt);
     auto solver_p512 = Solvers::PreconditionedConjugateGradient(std::get<0>(P512), std::get<1>(P512), std::get<2>(P512), &timer_p512);
-    solver_p512.setPreconditioner(Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P512)).getP());
+    MatrixXd C512 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P512)).getP();
+    solver_p512.setPreconditioner(C512);
     solver_p512.prepareSolver();
 
     Timer timer_p1024 = Timer(dt);
     auto solver_p1024 = Solvers::PreconditionedConjugateGradient(std::get<0>(P1024), std::get<1>(P1024), std::get<2>(P1024), &timer_p1024);
-    solver_p1024.setPreconditioner(Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P1024)).getP());
+    MatrixXd C1024 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P1024)).getP();
+    solver_p1024.setPreconditioner(C1024);
     solver_p1024.prepareSolver();
 
     Timer timer_p2048 = Timer(dt);
     auto solver_p2048 = Solvers::PreconditionedConjugateGradient(std::get<0>(P2048), std::get<1>(P2048), std::get<2>(P2048), &timer_p2048);
-    solver_p2048.setPreconditioner(Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P2048)).getP());
+    MatrixXd C2048 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P2048)).getP();
+    solver_p2048.setPreconditioner(C2048);
     solver_p2048.prepareSolver();
 
     timer_p256.start();
@@ -132,6 +136,13 @@ int main(int argc, char** argv) {
     timer_p2048.start();
     while (solver_p2048.forward());
     timer_p2048.stop();
+
+
+    saveMatrix("Preconditioner256.dat", &C256);
+    saveMatrix("Preconditioner512.dat", &C512);
+    saveMatrix("Preconditioner1024.dat", &C1024);
+    saveMatrix("Preconditioner2048.dat", &C2048);
+
 
     saveVector("palphas256.dat", solver_p256.getAlphas());
     saveVector("palphas512.dat", solver_p512.getAlphas());

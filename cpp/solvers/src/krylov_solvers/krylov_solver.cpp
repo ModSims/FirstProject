@@ -23,8 +23,8 @@ void KrylovSolver::innerLoop()
     {
         phi();
 
-        if (m_timer->getCurrentTimeStep() + 1 < m_alphas->size()) {
-            m_alphas->data()[m_timer->getCurrentTimeStep() + 1] = m_current_alpha;
+        if (m_timer->getCurrentTimeStep() + m_m < m_alphas->size()) {
+            m_alphas->data()[m_timer->getCurrentTimeStep() + m_m] = m_current_alpha;
             m_timer->update();
         }
 
