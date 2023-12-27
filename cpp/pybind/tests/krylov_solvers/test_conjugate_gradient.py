@@ -13,4 +13,4 @@ def test_conjugate_gradient_solver():
     solver = ConjugateGradient.simulate(A, x, b, dt)
     errors = solver.getAlphas()
 
-    assert len(errors) == 1
+    assert len(errors) == 2

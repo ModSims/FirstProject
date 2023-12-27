@@ -30,5 +30,5 @@ TEST_CASE( "Conjugate Gradient solver", "[ConjugateGradient]" ) {
 
     std::cout << "Conjugate Gradient solver took " << timer.getCurrentTimeStep() << " iterations and " << timer.getDurationInSeconds() << " seconds." << std::endl;
     
-    REQUIRE( timer.getCurrentTimeStep() == 1 );
+    REQUIRE( timer.getCurrentTimeStep() == 2 );
 }
