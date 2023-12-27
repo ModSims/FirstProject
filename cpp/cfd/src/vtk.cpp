@@ -25,17 +25,20 @@ void CFD::saveVTK(FluidSimulation* sim) {
     pressure_array->SetNumberOfComponents(1);
     pressure_array->SetName("Pressure");
 
-    // Add velocity data to the grid
+    // Add velocity data to the grid as a vector field
     vtkSmartPointer<vtkDoubleArray> velocity_array = vtkSmartPointer<vtkDoubleArray>::New();
-    velocity_array->SetNumberOfComponents(2);
+    velocity_array->SetNumberOfComponents(3);  // 3 components for the vector (VelocityX, VelocityY, 0)
     velocity_array->SetComponentName(0, "VelocityX");
     velocity_array->SetComponentName(1, "VelocityY");
+    velocity_array->SetComponentName(2, "VelocityZ");  // Z component is set to 0
     velocity_array->SetName("Velocity");
 
     for (int j = 0; j < sim->jmax; ++j) {
         for (int i = 0; i < sim->imax; ++i) {
             pressure_array->InsertNextValue(sim->grid.p.coeffRef(i, j));
-            velocity_array->InsertNextTuple2(sim->grid.u_interpolated.coeffRef(i, j), sim->grid.v_interpolated.coeffRef(i, j));
+            velocity_array->InsertNextTuple3(sim->grid.u_interpolated.coeffRef(i, j),
+                                             sim->grid.v_interpolated.coeffRef(i, j),
+                                             0.0);  // Z component is set to 0
         }
     }
 

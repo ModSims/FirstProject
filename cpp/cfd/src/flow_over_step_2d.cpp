@@ -200,12 +200,12 @@ void FlowOverStep2D::run() {
             // Fluid cells have fluid neighbors
             this->grid.flag_field(i, j) = FlagFieldMask::CELL_FLUID;
 
-            if (i < (this->grid.imax+2) / 4 && j < (this->grid.jmax+2) / 2) {
+            if (i < (this->grid.imax+2) / 8 && j < (this->grid.jmax+2) / 2) {
                 // Reset flag field
                 this->grid.flag_field(i, j) = FlagFieldMask::CELL_OBSTACLE;
 
                 // Obstacle cells have fluid neighbors
-                if (i == ((this->grid.imax+2)/4 - 1)) {
+                if (i == ((this->grid.imax+2)/8 - 1)) {
                     // East neighbor
                     this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_EAST;
                 }
@@ -215,13 +215,13 @@ void FlowOverStep2D::run() {
                     this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_NORTH;
                 }
             }
-            else if (i == (this->grid.imax+2) / 4 && j < (this->grid.jmax+2) / 2) {
+            else if (i == (this->grid.imax+2) / 8 && j < (this->grid.jmax+2) / 2) {
                 // Fluid cells have obstacle neighbors at West
                 this->grid.flag_field(i, j) &= FlagFieldMask::OBSTACLE_WEST;
 
 
             }
-            else if (i < (this->grid.imax+2) / 4 && j == (this->grid.jmax+2) / 2) {
+            else if (i < (this->grid.imax+2) / 8 && j == (this->grid.jmax+2) / 2) {
                 // Fluid cells have obstacle neighbors at South
                 this->grid.flag_field(i, j) &= FlagFieldMask::OBSTACLE_SOUTH;
             }
