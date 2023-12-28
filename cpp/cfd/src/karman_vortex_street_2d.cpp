@@ -108,11 +108,11 @@ void KarmanVortexStreet2D::setBoundaryConditionsP() {
                     counter++;
                 }
                 if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    tmp_p += this->grid.p(i+1, j);
+                    tmp_p += this->grid.p(i-1, j);
                     counter++;
                 }
                 if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    tmp_p += this->grid.p(i-1, j);
+                    tmp_p += this->grid.p(i+1, j);
                     counter++;
                 }
                 if (counter > 0) {
@@ -129,54 +129,11 @@ void KarmanVortexStreet2D::setBoundaryConditionsP() {
 
 void KarmanVortexStreet2D::setBoundaryConditionsInterpolatedVelocityGeometry() {
     // Geometry boundaries
-    int tmp_u = 0;
-    int counter_u = 0;
-    int tmp_v = 0;
-    int counter_v = 0;
     for (int i = 1; i < this->grid.imax + 1; i++) {
         for (int j = 1; j < this->grid.jmax + 1; j++) {
-            tmp_u = 0;
-            counter_u = 0;
-            tmp_v = 0;
-            counter_v = 0;
-            // check if is obstacle
             if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                // obstacle cell
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
-                    tmp_u += this->grid.u_interpolated(i, j+1);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i, j+1);
-                    counter_v++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
-                    tmp_u += this->grid.u_interpolated(i, j-1);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i, j-1);
-                    counter_v++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    tmp_u += this->grid.u_interpolated(i+1, j);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i+1, j);
-                    counter_v++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    tmp_u += this->grid.u_interpolated(i-1, j);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i-1, j);
-                    counter_v++;
-                }
-                if (counter_u > 0) {
-                    this->grid.u_interpolated(i, j) = tmp_u / counter_u;
-                }
-                if (counter_v > 0) {
-                    this->grid.v_interpolated(i, j) = tmp_v / counter_v;
-                }
-                if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
-                    // interior obstacle cell, so no-slip
-                    this->grid.u_interpolated(i,j) = 0.0;
-                    this->grid.v_interpolated(i,j) = 0.0;
-                }
+                this->grid.u_interpolated(i,j) = 0.0;
+                this->grid.v_interpolated(i,j) = 0.0;
             }
         }
     }
@@ -191,54 +148,37 @@ void KarmanVortexStreet2D::run() {
     }
 
     // Manage Flag Field with Bitmasks
+    // Square in the middle with fifth of the size of the domain
+    int width = floor(this->grid.jmax / 5.0);
+    int distanceTop = floor((this->grid.jmax - width) / 2.0);
+    int distanceBottom = distanceTop + width;
+    int distanceLeft = distanceTop;
+    int distanceRight = distanceBottom;
     for (int i = 1; i < this->grid.imax + 1; i++) {
         for (int j = 1; j < this->grid.jmax + 1; j++) {
-            double centerX = (this->grid.jmax + 2) / 2.0;
-            double centerY = (this->grid.jmax + 2) / 2.0;
 
-            // Calculate the distance to the center of the circle
-            double distanceToCenter = std::sqrt((i - centerX) * (i - centerX) +
-                                                (j - centerY) * (j - centerY));
-
-            if (distanceToCenter <= std::min((this->grid.imax+2) / 6.0, (this->grid.jmax+2) / 6.0)) {
-                // Inside the circular obstacle
+            // Check if cell is inside the square
+            if (i >= distanceLeft && i <= distanceRight && j >= distanceTop && j <= distanceBottom) {
+                // Inside the square
                 this->grid.flag_field(i, j) = FlagFieldMask::CELL_OBSTACLE;
 
-                // Determine quadrant
-                bool inFirstQuadrant = (i > (this->grid.imax + 2) / 2.0 && j > (this->grid.jmax + 2) / 2.0);
-                bool inSecondQuadrant = (i < (this->grid.imax + 2) / 2.0 && j > (this->grid.jmax + 2) / 2.0);
-                bool inThirdQuadrant = (i < (this->grid.imax + 2) / 2.0 && j < (this->grid.jmax + 2) / 2.0);
-                bool inFourthQuadrant = (i > (this->grid.imax + 2) / 2.0 && j < (this->grid.jmax + 2) / 2.0);
-
-                // Set fluid neighbors based on quadrant
-
-                if (inFirstQuadrant) {
-                    // West neighbor
-                    this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_EAST;
+                // Top Layer of the square
+                if (j == distanceTop) {
                     // South neighbor
                     this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_SOUTH;
                 }
-
-                if (inSecondQuadrant) {
-                    // East neighbor
-                    this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_EAST;
-                    // South neighbor
-                    this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_NORTH;
-                }
-
-                if (inThirdQuadrant) {
-                    // East neighbor
-                    this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_WEST;
+                if (j == distanceBottom) {
                     // North neighbor
                     this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_NORTH;
                 }
-
-                if (inFourthQuadrant) {
+                if (i == distanceLeft) {
                     // West neighbor
                     this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_WEST;
-                    // North neighbor
-                    this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_SOUTH;
                 }
+                if (i == distanceRight) {
+                    // East neighbor
+                    this->grid.flag_field(i, j) |= FlagFieldMask::FLUID_EAST;
+                } 
             } else {
                 // Fluid cells have fluid neighbors
                 this->grid.flag_field(i, j) = FlagFieldMask::CELL_FLUID;
