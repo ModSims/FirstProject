@@ -1,5 +1,6 @@
 #include <iostream>
 #include "cfd.h"
+#include "kernel.h"
 
 namespace CFD {
     namespace ME_X {
@@ -190,23 +191,9 @@ namespace CFD {
         }
     }
 
-    void FluidSimulation::updateStepLGLS() {
-        // jacobi smoother
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.p(i, j) = (
-                    (1/(-2*pow(this->grid.dx(), 2) - 2*pow(this->grid.dy(), 2)))
-                    *
-                    (
-                        this->grid.RHS(i,j)*pow(this->grid.dx(), 2)*pow(this->grid.dy(), 2) - pow(this->grid.dy(), 2)*(this->grid.p(i+1,j) + this->grid.p(i-1,j)) - pow(this->grid.dx(), 2)*(this->grid.p(i,j+1) + this->grid.p(i,j-1))
-                    )
-                );
-            }
-        }
-    }
-
     void FluidSimulation::computeResidual() {
-        this->res = (this->grid.p - this->grid.po).norm();
+        this->grid.res = this->grid.p - this->grid.po;
+        this->res_norm = this->grid.res.norm();
     }
 
     void FluidSimulation::computeU() {
@@ -223,5 +210,151 @@ namespace CFD {
                 this->grid.v(i,j) = this->grid.G(i,j) - (this->dt/this->grid.dy()) * (this->grid.p(i,j+1) - this->grid.p(i,j));
             }
         }
+    }
+
+    void FluidSimulation::setBoundaryConditionsInterpolatedVelocityGeometry() {
+        // Geometry boundaries
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
+                    this->grid.u_interpolated(i,j) = 0.0;
+                    this->grid.v_interpolated(i,j) = 0.0;
+                }
+            }
+        }
+    }
+
+    void FluidSimulation::setBoundaryConditionsPGeometry() {
+        // Geometry boundaries
+        double tmp_p = 0.0;
+        int counter = 0;
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                tmp_p = 0.0;
+                counter = 0;
+                // check if is obstacle
+                if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
+                    // obstacle cell
+                    if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
+                        tmp_p += this->grid.p(i, j+1);
+                        counter++;
+                    }
+                    if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
+                        tmp_p += this->grid.p(i, j-1);
+                        counter++;
+                    }
+                    if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
+                        tmp_p += this->grid.p(i-1, j);
+                        counter++;
+                    }
+                    if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
+                        tmp_p += this->grid.p(i+1, j);
+                        counter++;
+                    }
+                    if (counter > 0) {
+                        this->grid.p(i, j) = tmp_p / counter;
+                    }
+                }
+            }
+        }
+    }
+
+    void FluidSimulation::setBoundaryConditionsVelocityGeometry() {
+        // Geometry boundaries
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                // check if is obstacle
+                if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
+                    // corner cell
+                    if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH && this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
+                        this->grid.u(i, j) = 0.0;
+                        this->grid.v(i, j) = 0.0;
+                        this->grid.u(i-1, j) = -this->grid.u(i-1, j+1);
+                        this->grid.v(i, j-1) = -this->grid.v(i+1, j-1);
+                        this->grid.G(i, j) = this->grid.v(i, j);
+                        this->grid.F(i, j) = this->grid.u(i, j);
+                    }
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH && this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
+                        this->grid.u(i, j) = 0.0;
+                        this->grid.v(i, j) = 0.0;
+                        this->grid.u(i-1, j) = -this->grid.u(i-1, j+1);
+                        this->grid.v(i, j-1) = -this->grid.v(i-1, j-1);
+                        this->grid.G(i, j) = this->grid.v(i, j);
+                        this->grid.F(i, j) = this->grid.u(i, j);
+                    }
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH && this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
+                        this->grid.u(i, j) = 0.0;
+                        this->grid.v(i, j) = 0.0;
+                        this->grid.u(i-1, j) = -this->grid.u(i-1, j-1);
+                        this->grid.v(i, j-1) = -this->grid.v(i+1, j-1);
+                        this->grid.G(i, j) = this->grid.v(i, j);
+                        this->grid.F(i, j) = this->grid.u(i, j);
+                    }
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH && this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
+                        this->grid.u(i, j) = 0.0;
+                        this->grid.v(i, j) = 0.0;
+                        this->grid.u(i-1, j) = -this->grid.u(i-1, j-1);
+                        this->grid.v(i, j-1) = -this->grid.v(i-1, j-1);
+                        this->grid.G(i, j) = this->grid.v(i, j);
+                        this->grid.F(i, j) = this->grid.u(i, j);
+                    }
+                    // obstacle cell
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
+                        this->grid.u(i, j) = -this->grid.u(i, j+1);
+                        this->grid.u(i-1, j) = -this->grid.u(i-1, j+1);
+                        this->grid.v(i, j) = 0.0;
+                        this->grid.G(i, j) = this->grid.v(i, j);
+                    }
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
+                        this->grid.u(i, j) = -this->grid.u(i, j-1);
+                        this->grid.u(i-1, j) = -this->grid.u(i-1, j-1);
+                        this->grid.v(i, j) = 0.0;
+                        this->grid.G(i, j) = this->grid.v(i, j);
+                    }
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
+                        this->grid.v(i, j-1) = -this->grid.v(i-1, j-1);
+                        this->grid.v(i, j) = -this->grid.v(i-1, j);
+                        this->grid.u(i-1, j) = 0.0;
+                        this->grid.F(i-1, j) = this->grid.u(i-1, j);
+                    }
+                    else if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
+                        this->grid.v(i, j-1) = -this->grid.v(i+1, j-1);
+                        this->grid.v(i, j) = -this->grid.v(i+1, j);
+                        this->grid.u(i+1, j) = 0.0;
+                        this->grid.F(i+1, j) = this->grid.u(i+1, j);
+                    }
+                    else if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
+                        // interior obstacle cell, so no-slip
+                        this->grid.u(i,j) = 0.0;
+                        this->grid.v(i,j) = 0.0;
+                    }
+                }
+            }
+        }
+    }
+
+    void FluidSimulation::solveWithJacobi() {
+        // jacobi smoother
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.p(i, j) = (
+                    (1/(-2*pow(this->grid.dx(), 2) - 2*pow(this->grid.dy(), 2)))
+                    *
+                    (
+                        this->grid.RHS(i,j)*pow(this->grid.dx(), 2)*pow(this->grid.dy(), 2) - pow(this->grid.dy(), 2)*(this->grid.p(i+1,j) + this->grid.p(i-1,j)) - pow(this->grid.dx(), 2)*(this->grid.p(i,j+1) + this->grid.p(i,j-1))
+                    )
+                );
+            }
+        }
+    }
+
+    void FluidSimulation::solveWithMultiGrid() {
+        this->solveWithMultiGrid();
+    }
+
+    void FluidSimulation::saveMatrices() {
+        Kernel::saveMatrix("u.dat", &this->grid.u_interpolated);
+        Kernel::saveMatrix("v.dat", &this->grid.v_interpolated);
+        Kernel::saveMatrix("p.dat", &this->grid.p);
     }
 }

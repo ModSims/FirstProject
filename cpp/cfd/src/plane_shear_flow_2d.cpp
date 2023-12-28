@@ -3,47 +3,43 @@
 
 using namespace CFD;
 
-void LidDrivenCavity2D::setBoundaryConditionsU() {
-    // Everything no-slip in u-rows
+void PlaneShearFlow2D::setBoundaryConditionsU() {
+    // Inflow and outflow at left and right boundary
     for (int j = 0; j < this->grid.jmax + 3; j++) {
-        // Left wall
-        this->grid.u(0, j) = 0.0;
-        // Right wall
-        this->grid.u(this->grid.imax, j) = 0.0;
+        // Inflow at left boundary (Left wall)
+        this->grid.u(0, j) = 1.0;
+        // Outflow at right boundary (Right wall)
+        this->grid.u(this->grid.imax + 1, j) = this->grid.u(this->grid.imax, j);
     }
 
-    // Interpolate with inner wall
+    // no-slip at top and bottom
     for (int i = 0; i < this->grid.imax + 2; i++) {
         // Bottom wall
         this->grid.u(i, 0) = -this->grid.u(i, 1);
-    }
-
-    // Moving wall u_i,jmax+1 = 2.0 - ui,jmax
-    for (int i = 0; i < this->grid.imax + 2; i++) {
         // Top wall
-        this->grid.u(i,this->grid.jmax+1) = 2.0 - this->grid.u(i,this->grid.jmax);
+        this->grid.u(i, this->grid.jmax + 2) = -this->grid.u(i, this->grid.jmax + 1);
     }
 }
 
-void LidDrivenCavity2D::setBoundaryConditionsV() {
-    // Everything no-slip in v-rows
+void PlaneShearFlow2D::setBoundaryConditionsV() {
+    // Inflow and outflow at left and right boundary
     for (int j = 0; j < this->grid.jmax + 2; j++) {
-        // Left wall
+        // Inflow at left boundary (Left wall)
         this->grid.v(0, j) = -this->grid.v(1, j);
-        // Right wall
-        this->grid.v(this->grid.imax + 1, j) = -this->grid.v(this->grid.imax, j);
+        // Outflow at right boundary (Right wall)
+        this->grid.v(this->grid.imax + 1, j) = this->grid.v(this->grid.imax, j);
     }
-    
-    // Interpolate with inner wall
+
+    // no-slip at top and bottom
     for (int i = 0; i < this->grid.imax + 3; i++) {
         // Bottom wall
         this->grid.v(i, 0) = 0.0;
         // Top wall
-        this->grid.v(i, this->grid.jmax) = 0.0;
+        this->grid.v(i, this->grid.jmax + 1) = 0.0;
     }
 }
 
-void LidDrivenCavity2D::setBoundaryConditionsP() {
+void PlaneShearFlow2D::setBoundaryConditionsP() {
     for (int i = 0; i < this->grid.imax + 2; i++) {
         this->grid.p(i, 0) = this->grid.p(i, 1);
         this->grid.p(i, this->grid.jmax + 1) = this->grid.p(i, this->grid.jmax);
@@ -54,7 +50,7 @@ void LidDrivenCavity2D::setBoundaryConditionsP() {
     }
 }
 
-void LidDrivenCavity2D::run() {
+void PlaneShearFlow2D::run() {
     int n = 0;
     while(this->t < this->t_end) {
         n = 0;

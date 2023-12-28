@@ -25,6 +25,7 @@ set(CFD_SOURCES
     src/lid_driven_cavity_2d.cpp
     src/flow_over_step_2d.cpp
     src/karman_vortex_street_2d.cpp
+    src/plane_shear_flow_2d.cpp
 )
 
 # Compile the CFD library

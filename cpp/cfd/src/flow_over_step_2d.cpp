@@ -1,10 +1,8 @@
 #include <bitset>
 #include <iostream>
 #include "cfd.h"
-#include "kernel.h"
 
 using namespace CFD;
-using namespace Kernel; 
 
 void FlowOverStep2D::setBoundaryConditionsU() {
     // Inflow at left boundary (Only half)
@@ -46,43 +44,6 @@ void FlowOverStep2D::setBoundaryConditionsV() {
     }
 }
 
-void FlowOverStep2D::setBoundaryConditionsVelocityGeometry() {
-    // Geometry boundaries
-    for (int i = 1; i < this->grid.imax + 1; i++) {
-        for (int j = 1; j < this->grid.jmax + 1; j++) {
-            // check if is obstacle
-            if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                // obstacle cell
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
-                    this->grid.u(i, j) = -this->grid.u(i, j+1);
-                    this->grid.u(i-1, j) = -this->grid.u(i-1, j+1);
-                    this->grid.v(i, j) = 0.0;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
-                    this->grid.u(i, j) = -this->grid.u(i, j-1);
-                    this->grid.u(i-1, j) = -this->grid.u(i-1, j-1);
-                    this->grid.v(i, j) = 0.0;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    this->grid.u(i-1, j) = 0.0;
-                    this->grid.v(i, j) = -this->grid.v(i-1, j);
-                    this->grid.v(i, j-1) = -this->grid.v(i-1, j-1);
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    this->grid.u(i, j) = 0.0;
-                    this->grid.v(i, j) = -this->grid.v(i+1, j);
-                    this->grid.v(i, j-1) = -this->grid.v(i+1, j-1);
-                }
-                if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
-                    // interior obstacle cell, so no-slip
-                    this->grid.u(i,j) = 0.0;
-                    this->grid.v(i,j) = 0.0;
-                }
-            }
-        }
-    }
-}
-
 void FlowOverStep2D::setBoundaryConditionsP() {
     for (int i = 0; i < this->grid.imax + 2; i++) {
         this->grid.p(i, 0) = this->grid.p(i, 1);
@@ -91,98 +52,6 @@ void FlowOverStep2D::setBoundaryConditionsP() {
     for (int j = 0; j < this->grid.jmax + 2; j++) {
         this->grid.p(0, j) = this->grid.p(1, j);
         this->grid.p(this->grid.imax + 1, j) = this->grid.p(this->grid.imax, j);
-    }
-
-    // Geometry boundaries
-    int tmp_p = 0;
-    int counter = 0;
-    for (int i = 1; i < this->grid.imax + 1; i++) {
-        for (int j = 1; j < this->grid.jmax + 1; j++) {
-            tmp_p = 0;
-            counter = 0;
-            // check if is obstacle
-            if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                // obstacle cell
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
-                    tmp_p += this->grid.p(i, j+1);
-                    counter++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
-                    tmp_p += this->grid.p(i, j-1);
-                    counter++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    tmp_p += this->grid.p(i+1, j);
-                    counter++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    tmp_p += this->grid.p(i-1, j);
-                    counter++;
-                }
-                if (counter > 0) {
-                    this->grid.p(i, j) = tmp_p / counter;
-                }
-                if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
-                    // interior obstacle cell, so no-slip
-                    this->grid.p(i,j) = 0.0;
-                }
-            }
-        }
-    }
-}
-
-void FlowOverStep2D::setBoundaryConditionsInterpolatedVelocityGeometry() {
-    // Geometry boundaries
-    int tmp_u = 0;
-    int counter_u = 0;
-    int tmp_v = 0;
-    int counter_v = 0;
-    for (int i = 1; i < this->grid.imax + 1; i++) {
-        for (int j = 1; j < this->grid.jmax + 1; j++) {
-            tmp_u = 0;
-            counter_u = 0;
-            tmp_v = 0;
-            counter_v = 0;
-            // check if is obstacle
-            if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                // obstacle cell
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
-                    tmp_u += this->grid.u_interpolated(i, j+1);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i, j+1);
-                    counter_v++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
-                    tmp_u += this->grid.u_interpolated(i, j-1);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i, j-1);
-                    counter_v++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    tmp_u += this->grid.u_interpolated(i+1, j);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i+1, j);
-                    counter_v++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    tmp_u += this->grid.u_interpolated(i-1, j);
-                    counter_u++;
-                    tmp_v += this->grid.v_interpolated(i-1, j);
-                    counter_v++;
-                }
-                if (counter_u > 0) {
-                    this->grid.u_interpolated(i, j) = tmp_u / counter_u;
-                }
-                if (counter_v > 0) {
-                    this->grid.v_interpolated(i, j) = tmp_v / counter_v;
-                }
-                if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
-                    // interior obstacle cell, so no-slip
-                    this->grid.u_interpolated(i,j) = 0.0;
-                    this->grid.v_interpolated(i,j) = 0.0;
-                }
-            }
-        }
     }
 }
 
@@ -241,44 +110,48 @@ void FlowOverStep2D::run() {
 
     while(this->t < this->t_end) {
         n = 0;
-        selectDtAccordingToStabilityCondition();
+        this->selectDtAccordingToStabilityCondition();
         // print dt and residual
-        std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res << std::endl;
-        setBoundaryConditionsU();
-        setBoundaryConditionsV();
-        setBoundaryConditionsVelocityGeometry();
-        computeF();
-        computeG();
-        computeRHS();
-        while ((this->res > this->eps || this->res == 0) && n < this->itermax) {
-            setBoundaryConditionsP();
-            updateStepLGLS();
-            computeResidual();
+        std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
+        this->setBoundaryConditionsU();
+        this->setBoundaryConditionsV();
+        this->setBoundaryConditionsVelocityGeometry();
+        this->computeF();
+        this->computeG();
+        this->setBoundaryConditionsVelocityGeometry();
+        this->computeRHS();
+        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            this->solveWithJacobi();
+            this->computeResidual();
             n++;
         }
-        computeU();
-        computeV();
+        this->computeU();
+        this->computeV();
         this->grid.po = this->grid.p;
         this->t = this->t + this->dt;
         this->setBoundaryConditionsU();
         this->setBoundaryConditionsV();
+        this->setBoundaryConditionsVelocityGeometry();
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
         if (std::abs(t - std::round(t)) < 0.1) {
             this->grid.interpolateVelocity();
-            setBoundaryConditionsInterpolatedVelocityGeometry();
-            setBoundaryConditionsP();
+            this->setBoundaryConditionsInterpolatedVelocityGeometry();
             saveVTK(this);
         }
     }
 
-    setBoundaryConditionsU();
-    setBoundaryConditionsV();
-    setBoundaryConditionsVelocityGeometry();
+    this->setBoundaryConditionsU();
+    this->setBoundaryConditionsV();
+    this->setBoundaryConditionsVelocityGeometry();
 
     this->grid.interpolateVelocity();
 
-    setBoundaryConditionsInterpolatedVelocityGeometry();
-    setBoundaryConditionsP();
-    
+    this->setBoundaryConditionsInterpolatedVelocityGeometry();
+    this->setBoundaryConditionsP();
+    this->setBoundaryConditionsPGeometry();
 
     return;
 }

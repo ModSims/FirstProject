@@ -1,75 +1,42 @@
 #include <bitset>
 #include <iostream>
 #include "cfd.h"
-#include "kernel.h"
 
 using namespace CFD;
-using namespace Kernel; 
 
 void KarmanVortexStreet2D::setBoundaryConditionsU() {
     // Inflow and outflow at left and right boundary
     for (int j = 0; j < this->grid.jmax + 3; j++) {
-        // Inflow at left boundary
-        this->grid.u(0, j) = 2 - this->grid.u(1, j);
-        // Outflow at right boundary
-        this->grid.u(this->grid.imax, j) = this->grid.u(this->grid.imax-1, j);
+        // Inflow at left boundary (Left wall)
+        this->grid.u(0, j) = 1.0;
+        // Outflow at right boundary (Right wall)
+        this->grid.u(this->grid.imax + 1, j) = this->grid.u(this->grid.imax, j);
     }
 
     // no-slip at top and bottom
     for (int i = 0; i < this->grid.imax + 2; i++) {
+        // Bottom wall
         this->grid.u(i, 0) = -this->grid.u(i, 1);
-        this->grid.u(i, this->grid.jmax + 1) = -this->grid.u(i, this->grid.jmax);
+        // Top wall
+        this->grid.u(i, this->grid.jmax + 2) = -this->grid.u(i, this->grid.jmax + 1);
     }
 }
 
 void KarmanVortexStreet2D::setBoundaryConditionsV() {
     // Inflow and outflow at left and right boundary
     for (int j = 0; j < this->grid.jmax + 2; j++) {
+        // Inflow at left boundary (Left wall)
         this->grid.v(0, j) = -this->grid.v(1, j);
+        // Outflow at right boundary (Right wall)
         this->grid.v(this->grid.imax + 1, j) = this->grid.v(this->grid.imax, j);
     }
 
     // no-slip at top and bottom
     for (int i = 0; i < this->grid.imax + 3; i++) {
-        this->grid.v(i, 0) = -this->grid.v(i, 1);
-        this->grid.v(i, this->grid.jmax + 1) = -this->grid.v(i, this->grid.jmax);
-    }
-}
-
-void KarmanVortexStreet2D::setBoundaryConditionsVelocityGeometry() {
-    // Geometry boundaries
-    for (int i = 1; i < this->grid.imax + 1; i++) {
-        for (int j = 1; j < this->grid.jmax + 1; j++) {
-            // check if is obstacle
-            if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                // obstacle cell
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
-                    this->grid.u(i, j) = -this->grid.u(i, j+1);
-                    this->grid.u(i-1, j) = -this->grid.u(i-1, j+1);
-                    this->grid.v(i, j) = 0.0;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
-                    this->grid.u(i, j) = -this->grid.u(i, j-1);
-                    this->grid.u(i-1, j) = -this->grid.u(i-1, j-1);
-                    this->grid.v(i, j) = 0.0;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    this->grid.u(i-1, j) = 0.0;
-                    this->grid.v(i, j) = -this->grid.v(i-1, j);
-                    this->grid.v(i, j-1) = -this->grid.v(i-1, j-1);
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    this->grid.u(i, j) = 0.0;
-                    this->grid.v(i, j) = -this->grid.v(i+1, j);
-                    this->grid.v(i, j-1) = -this->grid.v(i+1, j-1);
-                }
-                if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
-                    // interior obstacle cell, so no-slip
-                    this->grid.u(i,j) = 0.0;
-                    this->grid.v(i,j) = 0.0;
-                }
-            }
-        }
+        // Bottom wall
+        this->grid.v(i, 0) = 0.0;
+        // Top wall
+        this->grid.v(i, this->grid.jmax + 1) = 0.0;
     }
 }
 
@@ -82,68 +49,12 @@ void KarmanVortexStreet2D::setBoundaryConditionsP() {
         this->grid.p(0, j) = this->grid.p(1, j);
         this->grid.p(this->grid.imax + 1, j) = this->grid.p(this->grid.imax, j);
     }
-
-    // Geometry boundaries
-    int tmp_p = 0;
-    int counter = 0;
-    for (int i = 1; i < this->grid.imax + 1; i++) {
-        for (int j = 1; j < this->grid.jmax + 1; j++) {
-            tmp_p = 0;
-            counter = 0;
-            // check if is obstacle
-            if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                // obstacle cell
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_NORTH) {
-                    tmp_p += this->grid.p(i, j+1);
-                    counter++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_SOUTH) {
-                    tmp_p += this->grid.p(i, j-1);
-                    counter++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_WEST) {
-                    tmp_p += this->grid.p(i-1, j);
-                    counter++;
-                }
-                if (this->grid.flag_field(i, j) & FlagFieldMask::FLUID_EAST) {
-                    tmp_p += this->grid.p(i+1, j);
-                    counter++;
-                }
-                if (counter > 0) {
-                    this->grid.p(i, j) = tmp_p / counter;
-                }
-                if (this->grid.flag_field(i, j) == FlagFieldMask::CELL_OBSTACLE) {
-                    // interior obstacle cell, so no-slip
-                    this->grid.p(i,j) = 0.0;
-                }
-            }
-        }
-    }
-}
-
-void KarmanVortexStreet2D::setBoundaryConditionsInterpolatedVelocityGeometry() {
-    // Geometry boundaries
-    for (int i = 1; i < this->grid.imax + 1; i++) {
-        for (int j = 1; j < this->grid.jmax + 1; j++) {
-            if ((this->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                this->grid.u_interpolated(i,j) = 0.0;
-                this->grid.v_interpolated(i,j) = 0.0;
-            }
-        }
-    }
 }
 
 void KarmanVortexStreet2D::run() {
-    // Set initially u to 1.0
-    for (int i = 0; i < this->grid.imax + 2; i++) {
-        for (int j = 0; j < this->grid.jmax + 3; j++) {
-            this->grid.u(i, j) = 1.0;
-        }
-    }
-
     // Manage Flag Field with Bitmasks
     // Square in the middle with fifth of the size of the domain
-    int width = floor(this->grid.jmax / 5.0);
+    int width = floor(this->grid.jmax / 4.0);
     int distanceTop = floor((this->grid.jmax - width) / 2.0);
     int distanceBottom = distanceTop + width;
     int distanceLeft = distanceTop;
@@ -193,44 +104,48 @@ void KarmanVortexStreet2D::run() {
 
     while(this->t < this->t_end) {
         n = 0;
-        selectDtAccordingToStabilityCondition();
+        this->selectDtAccordingToStabilityCondition();
         // print dt and residual
-        std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res << std::endl;
-        setBoundaryConditionsU();
-        setBoundaryConditionsV();
-        setBoundaryConditionsVelocityGeometry();
-        computeF();
-        computeG();
-        computeRHS();
-        while ((this->res > this->eps || this->res == 0) && n < this->itermax) {
-            setBoundaryConditionsP();
-            updateStepLGLS();
-            computeResidual();
+        std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
+        this->setBoundaryConditionsU();
+        this->setBoundaryConditionsV();
+        this->setBoundaryConditionsVelocityGeometry();
+        this->computeF();
+        this->computeG();
+        this->setBoundaryConditionsVelocityGeometry();
+        this->computeRHS();
+        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            this->solveWithJacobi();
+            this->computeResidual();
             n++;
         }
-        computeU();
-        computeV();
+        this->computeU();
+        this->computeV();
         this->grid.po = this->grid.p;
         this->t = this->t + this->dt;
         this->setBoundaryConditionsU();
         this->setBoundaryConditionsV();
+        this->setBoundaryConditionsVelocityGeometry();
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
         if (std::abs(t - std::round(t)) < 0.1) {
             this->grid.interpolateVelocity();
-            setBoundaryConditionsInterpolatedVelocityGeometry();
-            setBoundaryConditionsP();
+            this->setBoundaryConditionsInterpolatedVelocityGeometry();
             saveVTK(this);
         }
     }
 
-    setBoundaryConditionsU();
-    setBoundaryConditionsV();
-    setBoundaryConditionsVelocityGeometry();
+    this->setBoundaryConditionsU();
+    this->setBoundaryConditionsV();
+    this->setBoundaryConditionsVelocityGeometry();
 
     this->grid.interpolateVelocity();
 
-    setBoundaryConditionsInterpolatedVelocityGeometry();
-    setBoundaryConditionsP();
-    
+    this->setBoundaryConditionsInterpolatedVelocityGeometry();
+    this->setBoundaryConditionsP();
+    this->setBoundaryConditionsPGeometry();
 
     return;
 }

@@ -46,4 +46,5 @@ int main(int argc, char* argv[]) {
         program.get<double>("--dt")
     );
     sim.run();
+    sim.saveMatrices();
 }

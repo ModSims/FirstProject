@@ -46,7 +46,5 @@ int main(int argc, char* argv[]) {
         program.get<double>("--dt")
     );
     sim.run();
-    Kernel::saveMatrix("u.dat", &sim.grid.u_interpolated);
-    Kernel::saveMatrix("v.dat", &sim.grid.v_interpolated);
-    Kernel::saveMatrix("p.dat", &sim.grid.p);
+    sim.saveMatrices();
 }

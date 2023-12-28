@@ -38,6 +38,7 @@ namespace CFD {
             p = MatrixXd::Zero(imax + 2, jmax + 2);
             po = MatrixXd::Zero(imax + 2, jmax + 2);
             RHS = MatrixXd::Zero(imax + 2, jmax + 2);
+            res = MatrixXd::Zero(imax + 2, jmax + 2);
             u = MatrixXd::Zero(imax + 2, jmax + 3);
             F = MatrixXd::Zero(imax + 2, jmax + 3);
             v = MatrixXd::Zero(imax + 3, jmax + 2);
@@ -58,6 +59,7 @@ namespace CFD {
         MatrixXd p;
         MatrixXd po;
         MatrixXd RHS;
+        MatrixXd res;
         MatrixXd u;
         MatrixXd v;
         MatrixXd F;
@@ -82,8 +84,7 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0,
-                double p_dt = 0.05,
-                double p_res = 99999
+                double p_dt = 0.05
             ) {
                 imax = p_imax;
                 jmax = p_jmax;
@@ -98,7 +99,7 @@ namespace CFD {
                 Re = p_Re;
                 t = p_t;
                 dt = p_dt;
-                res = p_res;
+                res_norm = 0.0;
             }
             int imax;
             int jmax;
@@ -113,13 +114,14 @@ namespace CFD {
             double Re;
             double t;
             double dt;
-            double res;
+            double res_norm;
             StaggeredGrid grid;
             void selectDtAccordingToStabilityCondition();
             void computeF();
             void computeG();
             void computeRHS();
-            void updateStepLGLS();
+            void solveWithJacobi();
+            void solveWithMultiGrid();
             void computeResidual();
             void computeU();
             void computeV();
@@ -127,8 +129,10 @@ namespace CFD {
             void setBoundaryConditionsU();
             void setBoundaryConditionsV();
             void setBoundaryConditionsP();
+            void setBoundaryConditionsPGeometry();
             void setBoundaryConditionsVelocityGeometry();
             void setBoundaryConditionsInterpolatedVelocityGeometry();
+            void saveMatrices();
     };
 
     class LidDrivenCavity2D : public FluidSimulation {
@@ -146,8 +150,7 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05,
-                double p_res = 99999
+                double p_dt = 0.05
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -161,8 +164,7 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt,
-                p_res
+                p_dt
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
@@ -187,8 +189,7 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05,
-                double p_res = 99999
+                double p_dt = 0.05
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -202,16 +203,13 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt,
-                p_res
+                p_dt
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
             void setBoundaryConditionsU();
             void setBoundaryConditionsV();
             void setBoundaryConditionsP();
-            void setBoundaryConditionsVelocityGeometry();
-            void setBoundaryConditionsInterpolatedVelocityGeometry();
             void run();
     };
 
@@ -230,8 +228,7 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05,
-                double p_res = 99999
+                double p_dt = 0.05
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -245,18 +242,54 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt,
-                p_res
+                p_dt
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
             void setBoundaryConditionsU();
             void setBoundaryConditionsV();
             void setBoundaryConditionsP();
-            void setBoundaryConditionsVelocityGeometry();
-            void setBoundaryConditionsInterpolatedVelocityGeometry();
             void run();
-    }; 
+    };
+
+    class PlaneShearFlow2D : public FluidSimulation {
+        public:
+            PlaneShearFlow2D(
+                const int p_imax = 50,
+                const int p_jmax = 50,
+                const double p_xlength = 1.0,
+                const double p_ylength = 1.0,
+                const double p_t_end = 50.0,
+                const double p_tau = 0.5,
+                const double p_eps = 1e-3,
+                const double p_omg = 1.7,
+                const int p_itermax = 100,
+                const double p_alpha = 0.9,
+                const double p_Re = 100.0,
+                double p_t = 0.0,
+                double p_dt = 0.05
+            ) : FluidSimulation(
+                p_imax,
+                p_jmax,
+                p_xlength,
+                p_ylength,
+                p_t_end,
+                p_tau,
+                p_eps,
+                p_omg,
+                p_itermax,
+                p_alpha,
+                p_Re,
+                p_t,
+                p_dt
+            ) {
+                grid = StaggeredGrid(imax, jmax, xlength, ylength);
+            }
+            void setBoundaryConditionsU();
+            void setBoundaryConditionsV();
+            void setBoundaryConditionsP();
+            void run();
+    };
 
     // Functions
     void saveVTK(FluidSimulation* sim);
