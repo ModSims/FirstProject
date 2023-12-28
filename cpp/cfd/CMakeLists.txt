@@ -1,7 +1,22 @@
 project(cfd)
 
 find_package(Eigen3 REQUIRED COMPONENTS CXX)
-find_package(VTK REQUIRED)
+find_package(VTK REQUIRED COMPONENTS
+    vtkCommonDataModel
+    vtkCommonCore
+    vtkCommonExecutionModel
+    vtkCommonMath
+    vtkCommonMisc
+    vtkCommonSystem
+    vtkCommonTransforms
+    vtkIOCore
+    vtkIOLegacy
+    vtkIOParallelXML
+    vtkIOXML
+    vtkIOXMLParser
+    vtkParallelCore
+    vtksys
+)
 
 set(CFD_SOURCES
     src/cfd.cpp
@@ -13,7 +28,7 @@ set(CFD_SOURCES
 
 # Compile the CFD library
 add_library(cfd STATIC ${CFD_SOURCES})
-target_compile_options(cfd PRIVATE -fPIC)
+target_compile_options(cfd PRIVATE)
 target_include_directories(cfd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(cfd Eigen3::Eigen kernel ${VTK_LIBRARIES})
 

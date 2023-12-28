@@ -7,13 +7,11 @@ using namespace CFD;
 using namespace Kernel; 
 
 void KarmanVortexStreet2D::setBoundaryConditionsU() {
-    // Inflow at left boundary
+    // Inflow and outflow at left and right boundary
     for (int j = 0; j < this->grid.jmax + 3; j++) {
-        this->grid.u(0, j) = 1.0;
-    }
-
-    // Outflow at right boundary
-    for (int j = 0; j < this->grid.jmax + 3; j++) {
+        // Inflow at left boundary
+        this->grid.u(0, j) = 2 - this->grid.u(1, j);
+        // Outflow at right boundary
         this->grid.u(this->grid.imax, j) = this->grid.u(this->grid.imax-1, j);
     }
 
@@ -25,20 +23,16 @@ void KarmanVortexStreet2D::setBoundaryConditionsU() {
 }
 
 void KarmanVortexStreet2D::setBoundaryConditionsV() {
-    // Inflow at left boundary
+    // Inflow and outflow at left and right boundary
     for (int j = 0; j < this->grid.jmax + 2; j++) {
-        this->grid.v(0, j) = 0.0;
-    }
-
-    // Outflow at right boundary
-    for (int j = 0; j < this->grid.jmax + 2; j++) {
+        this->grid.v(0, j) = -this->grid.v(1, j);
         this->grid.v(this->grid.imax + 1, j) = this->grid.v(this->grid.imax, j);
     }
 
     // no-slip at top and bottom
     for (int i = 0; i < this->grid.imax + 3; i++) {
-        this->grid.v(i, 0) = 0.0;
-        this->grid.v(i, this->grid.jmax + 1) = 0.0;
+        this->grid.v(i, 0) = -this->grid.v(i, 1);
+        this->grid.v(i, this->grid.jmax + 1) = -this->grid.v(i, this->grid.jmax);
     }
 }
 
