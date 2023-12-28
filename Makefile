@@ -13,7 +13,7 @@ configure: build_folder_check
 	cd cpp/build && cmake -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DEIGEN_TEST_NOQT=ON ..
 
 build: build_folder_check
-	cd cpp/build && make
+	cd cpp/build && make -j
 
 test: build_folder_check
 	cd cpp/build && make test

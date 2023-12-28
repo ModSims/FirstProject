@@ -2,19 +2,20 @@ project(cfd)
 
 find_package(Eigen3 REQUIRED COMPONENTS CXX)
 find_package(VTK REQUIRED COMPONENTS
-    vtkCommonDataModel
-    vtkCommonCore
-    vtkCommonExecutionModel
-    vtkCommonMath
-    vtkCommonMisc
-    vtkCommonSystem
-    vtkCommonTransforms
-    vtkIOCore
-    vtkIOLegacy
-    vtkIOParallelXML
-    vtkIOXML
-    vtkIOXMLParser
-    vtkParallelCore
+    CommonDataModel
+    CommonCore
+    CommonExecutionModel
+    CommonMath
+    CommonMisc
+    CommonSystem
+    CommonTransforms
+    IOCore
+    IOLegacy
+    IOParallelXML
+    IOXML
+    IOXMLParser
+    ParallelCore
+    FiltersCore
     vtksys
 )
 
