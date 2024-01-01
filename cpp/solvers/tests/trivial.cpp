@@ -8,22 +8,24 @@ using namespace Solvers;
 
 TEST_CASE( "Trivial solver", "[trivial]" ) {
     // Initialize the problem
-    MatrixXd A(2, 2);
-    A << 0.7, -0.4,
+    SolverData data;
+    data.A = MatrixXd(2, 2);
+    data.A << 0.7, -0.4,
         -0.2,  0.5;
     
-    VectorXd x(2);
-    x << 21.0, -19.0;
+    data.x = VectorXd(2);
+    data.x << 21.0, -19.0;
     
-    VectorXd b(2);
-    b << 0.3, 0.3;
+    data.b = VectorXd(2);
+    data.b << 0.3, 0.3;
     
     // Solve the problem
     double dt = 0.0001;
     int max_iterations = 100;
     double omega = 1.0;
     Timer timer = Timer(dt);
-    auto solver = Solvers::Trivial(A, x, b, max_iterations, omega, &timer);
+    auto solver = Solvers::Trivial(&data, max_iterations, omega, &timer);
+    solver.prepareSolver();
 
     timer.start();
     while (solver.forward());

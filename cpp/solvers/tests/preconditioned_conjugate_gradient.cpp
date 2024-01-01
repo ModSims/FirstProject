@@ -8,23 +8,24 @@ using namespace Solvers;
 
 TEST_CASE( "Preconditioned Conjugate Gradient solver", "[PreconditionedConjugateGradient]" ) {
     // Initialize the problem
-    MatrixXd A(2, 2);
-    A << 0.7, -0.4,
+    SolverData data;
+    data.A = MatrixXd(2, 2);
+    data.A << 0.7, -0.4,
         -0.4,  0.7;
     
-    VectorXd x(2);
-    x << 21.0, -19.0;
+    data.x = VectorXd(2);
+    data.x << 21.0, -19.0;
     
-    VectorXd b(2);
-    b << 0.3, 0.3;
+    data.b = VectorXd(2);
+    data.b << 0.3, 0.3;
 
     // Preconditioned Conjugate Gradient
-    MatrixXd P = Maths::Matrix::IncompleteCholeskyDecomposition(A).getP();
+    MatrixXd P = Maths::Matrix::IncompleteCholeskyDecomposition(data.A).getP();
     
     // Solve the problem
     double dt = 0.0001;
     Timer timer = Timer(dt);
-    auto solver = Solvers::PreconditionedConjugateGradient(A, x, b, &timer);
+    auto solver = Solvers::PreconditionedConjugateGradient(&data, &timer);
     solver.setPreconditioner(P);
     solver.prepareSolver();
 

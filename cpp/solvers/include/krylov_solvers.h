@@ -1,6 +1,7 @@
 #pragma once
 #include <Eigen/Dense>
 #include "kernel.h"
+#include "solvers.h"
 
 namespace Solvers
 {
@@ -8,19 +9,18 @@ namespace Solvers
     class KrylovSolver
     {
     public:
-        KrylovSolver(MatrixXd A, VectorXd x, VectorXd b, Kernel::Timer *timer);
+        KrylovSolver(SolverData *data, Kernel::Timer *timer);
         KrylovSolver(KrylovSolver &solver) = delete;
         KrylovSolver &operator=(KrylovSolver &solver) = delete;
         KrylovSolver(KrylovSolver&& other) noexcept
             : m_timer(other.m_timer),
             m_alphas(other.m_alphas),
-            m_A(std::move(other.m_A)),
-            m_x(std::move(other.m_x)),
-            m_b(std::move(other.m_b))
+            m_data(other.m_data)
         {
             // Nullify other's pointers
             other.m_timer = nullptr;
             other.m_alphas = nullptr;
+            other.m_data = nullptr;
         }
         virtual VectorXd phi() = 0;
         virtual void prepareSolver() = 0;
@@ -35,9 +35,7 @@ namespace Solvers
         const double m_tolerance = 1e-30;
 
     protected:
-        MatrixXd m_A;
-        VectorXd m_x;
-        VectorXd m_b;
+        SolverData *m_data;
         VectorXd *m_alphas;
         VectorXd m_r;
         VectorXd m_p;
@@ -54,7 +52,7 @@ namespace Solvers
     class ConjugateGradient : public KrylovSolver
     {
     public:
-        ConjugateGradient(MatrixXd A, VectorXd x, VectorXd b, Kernel::Timer *timer) : KrylovSolver(A, x, b, timer) {}
+        ConjugateGradient(SolverData *data, Kernel::Timer *timer) : KrylovSolver(data, timer) {}
         VectorXd phi();
         void prepareSolver();
     };
@@ -62,7 +60,7 @@ namespace Solvers
     class PreconditionedConjugateGradient : public KrylovSolver
     {
     public:
-        PreconditionedConjugateGradient(MatrixXd A, VectorXd x, VectorXd b, Kernel::Timer *timer) : KrylovSolver(A, x, b, timer) {}
+        PreconditionedConjugateGradient(SolverData *data, Kernel::Timer *timer) : KrylovSolver(data, timer) {}
         VectorXd phi();
         void prepareSolver();
         void setPreconditioner(MatrixXd P);

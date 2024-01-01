@@ -4,19 +4,29 @@
 using namespace Solvers;
 using namespace Eigen;
 
-VectorXd Jacobi::phi(MatrixXd& A, VectorXd& x, VectorXd& b) {
-    MatrixXd I = MatrixXd::Identity(A.rows(), A.cols());
-    MatrixXd D = A.diagonal().asDiagonal();
-    // Inverse the diagonal matrix D by taking the reciprocal of each element (without method .inverse())
-    MatrixXd D_inv = D;
-    for (int i = 0; i < D_inv.rows(); ++i) {
-        if (D_inv(i, i) != 0) {
-            D_inv(i, i) = 1 / D_inv(i, i);
+void Jacobi::prepareSolver() {
+    // Extract diagonal elements of A
+    VectorXd diagA = this->getData()->A.diagonal();
+
+    // Check for division by zero in diagA
+    for (int i = 0; i < this->getData()->A.rows(); ++i) {
+        if (diagA(i) == 0) {
+            // Handle division by zero by setting a small epsilon value
+            diagA(i) = 1e-10;
         }
     }
 
-    // omega relaxation
-    MatrixXd M = (I - this->getOmega() * D_inv * A);
-    MatrixXd N = this->getOmega() * D_inv;
-    return M * x + N * b;
+    // Calculate the reciprocal of diagonal elements
+    this->m_D_inv = diagA.cwiseInverse();
 }
+
+VectorXd Jacobi::phi(SolverData *data) {
+    // Calculate the residual term (b - Ax)
+    VectorXd residual = data->b - data->A * data->x;
+
+    // Perform Jacobi iteration directly on vector x
+    data->x += this->getOmega() * (this->m_D_inv.cwiseProduct(residual));
+
+    return residual;
+}
+

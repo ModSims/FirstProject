@@ -28,6 +28,12 @@ void Timer::update() {
     m_timeSteps++;
 }
 
+void Timer::reset() {
+    m_startTime = std::chrono::steady_clock::time_point();
+    m_endTime = std::chrono::steady_clock::time_point();
+    m_timeSteps = 0;
+}
+
 int Timer::getDurationInSeconds() {
     const long long count = std::chrono::duration_cast<std::chrono::microseconds>(m_endTime - m_startTime).count();
     return static_cast<int>(count) / 1000000;

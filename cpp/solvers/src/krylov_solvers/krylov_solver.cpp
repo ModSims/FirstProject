@@ -6,8 +6,8 @@
 using namespace Solvers;
 using namespace Eigen;
 
-KrylovSolver::KrylovSolver(MatrixXd A, VectorXd x, VectorXd b, Kernel::Timer *timer)
-    : m_timer(timer), m_A(A), m_x(x), m_b(b)
+KrylovSolver::KrylovSolver(SolverData *data, Kernel::Timer *timer)
+    : m_timer(timer), m_data(data)
 {
     m_alphas = new VectorXd(100000);
 }
@@ -38,7 +38,7 @@ void KrylovSolver::innerLoop()
 
 bool KrylovSolver::forward()
 {
-    if (m_break_solver || m_m >= m_A.rows())
+    if (m_break_solver || m_m >= m_data->A.rows())
     {
         m_break_solver = true;
         m_alphas->conservativeResize(m_timer->getCurrentTimeStep());
@@ -68,10 +68,10 @@ double KrylovSolver::getTolerance()
 
 void KrylovSolver::setX(VectorXd x)
 {
-    m_x = x;
+    m_data->x = x;
 }
 
 VectorXd *KrylovSolver::getX()
 {
-    return &m_x;
+    return &m_data->x;
 }

@@ -1,13 +1,12 @@
 #include "iteration_solvers.h"
-
 #include <iostream>
 #include <vector>
 
 using namespace Solvers;
 using namespace Eigen;
 
-IterationSolver::IterationSolver(MatrixXd A, VectorXd x, VectorXd b, int max_iterations, double omega, Kernel::Timer *timer)
-    : m_timer(timer), m_A(A), m_x(x), m_b(b), m_max_iterations(max_iterations), m_omega(omega)
+IterationSolver::IterationSolver(SolverData *data, int max_iterations, double omega, Kernel::Timer *timer)
+    : m_timer(timer), m_data(data), m_max_iterations(max_iterations), m_omega(omega)
 {
     m_residuals = new VectorXd(m_max_iterations);
 }
@@ -15,7 +14,7 @@ IterationSolver::IterationSolver(MatrixXd A, VectorXd x, VectorXd b, int max_ite
 bool IterationSolver::forward()
 {
     if (
-        (*this->getLastResidual() <= m_tolerance && m_timer->getCurrentTimeStep() > 0)
+        (getLastResidual() <= m_tolerance && m_timer->getCurrentTimeStep() > 0)
         || m_timer->isStopped() 
         || m_timer->getCurrentTimeStep() + 1 >= m_max_iterations
     )
@@ -24,11 +23,7 @@ bool IterationSolver::forward()
         return false;
     }
 
-    this->setX(phi(m_A, m_x, m_b));
-    double residual = (m_b - m_A * m_x).norm();
-
-    int newTimeStep = m_timer->getCurrentTimeStep() + 1;
-    (*m_residuals)(newTimeStep) = residual;
+    (*m_residuals)(m_timer->getCurrentTimeStep() + 1) = phi(m_data).norm();
 
     m_timer->update();
     return true;
@@ -39,9 +34,10 @@ VectorXd *IterationSolver::getResiduals()
     return m_residuals;
 }
 
-double *IterationSolver::getLastResidual()
+// Return the last residual by reference
+double& IterationSolver::getLastResidual()
 {
-    return m_residuals->data() + m_timer->getCurrentTimeStep();
+    return (*m_residuals)(m_timer->getCurrentTimeStep());
 }
 
 double IterationSolver::getTolerance()
@@ -52,16 +48,6 @@ double IterationSolver::getTolerance()
 double IterationSolver::getOmega()
 {
     return m_omega;
-}
-
-void IterationSolver::setX(VectorXd x)
-{
-    m_x = x;
-}
-
-VectorXd *IterationSolver::getX()
-{
-    return &m_x;
 }
 
 int IterationSolver::getMaxIterations() const

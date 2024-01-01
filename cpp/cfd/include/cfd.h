@@ -1,6 +1,9 @@
 #pragma once
 
 #include <Eigen/Dense>
+#include <Eigen/Sparse>
+#include "iteration_solvers.h"
+#include "krylov_solvers.h"
 
 namespace CFD {
     using namespace Eigen;
@@ -22,6 +25,13 @@ namespace CFD {
         MASK_SOUTH = 0b00010,
         MASK_NORTH = 0b00001
     };
+
+    enum SolverType {
+        JACOBI,
+        MULTIGRID_JACOBI,
+        CONJUGATED_GRADIENT
+    };
+    SolverType convertSolverType(const std::string& solver);
 
     class StaggeredGrid {
     public:
@@ -46,6 +56,8 @@ namespace CFD {
             u_interpolated = MatrixXd::Zero(imax + 2, jmax + 2);
             v_interpolated = MatrixXd::Zero(imax + 2, jmax + 2);
             flag_field = MatrixXi::Zero(imax + 2, jmax + 2);
+            // Conjugated Gradient components
+            Ares = MatrixXd::Zero(imax + 2, jmax + 2);
         }
         double dx() const { return xlength / imax; }
         double dy() const { return ylength / jmax; }
@@ -67,6 +79,8 @@ namespace CFD {
         MatrixXd u_interpolated;
         MatrixXd v_interpolated;
         MatrixXi flag_field;
+        // Conjugated Gradient components
+        MatrixXd Ares;
     };
 
     class FluidSimulation {
@@ -84,7 +98,8 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0,
-                double p_dt = 0.05
+                double p_dt = 0.05,
+                SolverType p_solver_type = SolverType::JACOBI
             ) {
                 imax = p_imax;
                 jmax = p_jmax;
@@ -100,6 +115,8 @@ namespace CFD {
                 t = p_t;
                 dt = p_dt;
                 res_norm = 0.0;
+                solver_type = p_solver_type;
+
             }
             int imax;
             int jmax;
@@ -116,23 +133,28 @@ namespace CFD {
             double dt;
             double res_norm;
             StaggeredGrid grid;
+            Kernel::Timer timer;
+            SolverType solver_type;
             void selectDtAccordingToStabilityCondition();
             void computeF();
             void computeG();
             void computeRHS();
             void solveWithJacobi();
             void solveWithMultiGrid();
+            void solveWithConjugatedGradient();
             void computeResidual();
             void computeU();
             void computeV();
             void run();
-            void setBoundaryConditionsU();
-            void setBoundaryConditionsV();
-            void setBoundaryConditionsP();
-            void setBoundaryConditionsPGeometry();
-            void setBoundaryConditionsVelocityGeometry();
-            void setBoundaryConditionsInterpolatedVelocityGeometry();
+            virtual void setBoundaryConditionsU() = 0;
+            virtual void setBoundaryConditionsV() = 0;
+            virtual void setBoundaryConditionsP() = 0;
+            virtual void setBoundaryConditionsPGeometry();
+            virtual void setBoundaryConditionsVelocityGeometry();
+            virtual void setBoundaryConditionsInterpolatedVelocityGeometry();
             void saveMatrices();
+
+            virtual ~FluidSimulation() = default;
     };
 
     class LidDrivenCavity2D : public FluidSimulation {
@@ -150,7 +172,8 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05
+                double p_dt = 0.05,
+                SolverType p_solver_type = SolverType::JACOBI
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -164,14 +187,17 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt
+                p_dt,
+                p_solver_type
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
-            void setBoundaryConditionsU();
-            void setBoundaryConditionsV();
-            void setBoundaryConditionsP();
-            void run();
+            void setBoundaryConditionsU() override;
+            void setBoundaryConditionsV() override;
+            void setBoundaryConditionsP() override;
+            void setBoundaryConditionsVelocityGeometry() override {};
+            void setBoundaryConditionsInterpolatedVelocityGeometry() override {};
+            void setBoundaryConditionsPGeometry() override {};
     };
 
     class FlowOverStep2D : public FluidSimulation {
@@ -189,7 +215,8 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05
+                double p_dt = 0.05,
+                SolverType p_solver_type = SolverType::JACOBI
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -203,13 +230,14 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt
+                p_dt,
+                p_solver_type
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
-            void setBoundaryConditionsU();
-            void setBoundaryConditionsV();
-            void setBoundaryConditionsP();
+            void setBoundaryConditionsU() override;
+            void setBoundaryConditionsV() override;
+            void setBoundaryConditionsP() override;
             void run();
     };
 
@@ -228,7 +256,8 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05
+                double p_dt = 0.05,
+                SolverType p_solver_type = SolverType::JACOBI
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -242,13 +271,14 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt
+                p_dt,
+                p_solver_type
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
-            void setBoundaryConditionsU();
-            void setBoundaryConditionsV();
-            void setBoundaryConditionsP();
+            void setBoundaryConditionsU() override;
+            void setBoundaryConditionsV() override;
+            void setBoundaryConditionsP() override;
             void run();
     };
 
@@ -267,7 +297,8 @@ namespace CFD {
                 const double p_alpha = 0.9,
                 const double p_Re = 100.0,
                 double p_t = 0.0,
-                double p_dt = 0.05
+                double p_dt = 0.05,
+                SolverType p_solver_type = SolverType::JACOBI
             ) : FluidSimulation(
                 p_imax,
                 p_jmax,
@@ -281,14 +312,17 @@ namespace CFD {
                 p_alpha,
                 p_Re,
                 p_t,
-                p_dt
+                p_dt,
+                p_solver_type
             ) {
                 grid = StaggeredGrid(imax, jmax, xlength, ylength);
             }
-            void setBoundaryConditionsU();
-            void setBoundaryConditionsV();
-            void setBoundaryConditionsP();
-            void run();
+            void setBoundaryConditionsU() override;
+            void setBoundaryConditionsV() override;
+            void setBoundaryConditionsP() override;
+            void setBoundaryConditionsVelocityGeometry() override {};
+            void setBoundaryConditionsInterpolatedVelocityGeometry() override {};
+            void setBoundaryConditionsPGeometry() override {};
     };
 
     // Functions

@@ -1,8 +1,22 @@
 #include <iostream>
 #include "cfd.h"
-#include "kernel.h"
 
 namespace CFD {
+    SolverType convertSolverType(const std::string& solver) {
+        if (solver == "jacobi") {
+            return SolverType::JACOBI;
+        }
+        else if (solver == "multigrid_jacobi") {
+            return SolverType::MULTIGRID_JACOBI;
+        }
+        else if (solver == "conjugated_gradient") {
+            return SolverType::CONJUGATED_GRADIENT;
+        }
+        else {
+            throw std::invalid_argument("Invalid solver type");
+        }
+    }
+
     namespace ME_X {
         // Slide 15
         double uu_x(StaggeredGrid *grid, FluidSimulation *sim, int i, int j) {
@@ -334,22 +348,119 @@ namespace CFD {
     }
 
     void FluidSimulation::solveWithJacobi() {
+        this->grid.po = this->grid.p;
+        double dx_squared = pow(this->grid.dx(), 2);
+        double dy_squared = pow(this->grid.dy(), 2);
         // jacobi smoother
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
                 this->grid.p(i, j) = (
-                    (1/(-2*pow(this->grid.dx(), 2) - 2*pow(this->grid.dy(), 2)))
+                    (1/(-2*dx_squared - 2*dy_squared))
                     *
                     (
-                        this->grid.RHS(i,j)*pow(this->grid.dx(), 2)*pow(this->grid.dy(), 2) - pow(this->grid.dy(), 2)*(this->grid.p(i+1,j) + this->grid.p(i-1,j)) - pow(this->grid.dx(), 2)*(this->grid.p(i,j+1) + this->grid.p(i,j-1))
+                        this->grid.RHS(i,j)*dx_squared*dy_squared - dy_squared*(this->grid.p(i+1,j) + this->grid.p(i-1,j)) - dx_squared*(this->grid.p(i,j+1) + this->grid.p(i,j-1))
                     )
                 );
             }
         }
     }
 
-    void FluidSimulation::solveWithMultiGrid() {
-        this->solveWithMultiGrid();
+    void FluidSimulation::solveWithConjugatedGradient() {
+        this->grid.po = this->grid.p;
+        double alpha_top = 0.0;
+        double alpha_bottom = 0.0;
+        double dx_squared = pow(this->grid.dx(), 2);
+        double dy_squared = pow(this->grid.dy(), 2);
+        // Calculating residual vector of Ax=b
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                    // laplacian operator of grid.p
+                    (1/dx_squared)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) + (1/dy_squared)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
+                );
+                alpha_top += this->grid.res(i,j)*this->grid.res(i,j);
+            }
+        }
+        // Laplacian operator of grid.res, because of dot product of <res, Ares>, A-Matrix is the laplacian operator
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.Ares(i,j) = (
+                    (1/dx_squared)*(this->grid.res(i+1,j) - 2*this->grid.res(i,j) + this->grid.res(i-1,j)) + (1/dy_squared)*(this->grid.res(i,j+1) - 2*this->grid.res(i,j) + this->grid.res(i,j-1))
+                );
+                alpha_bottom += this->grid.res(i,j)*this->grid.Ares(i,j);
+            }
+        }
+        // Update pressure
+        double alpha = alpha_top/alpha_bottom;
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.p(i,j) += alpha*this->grid.res(i,j);
+            }
+        }
+    }
+
+    void FluidSimulation::run() {
+        int n = 0;
+
+        // Function pointer to solver
+        void (CFD::FluidSimulation::*solver)();
+
+        if (this->solver_type == SolverType::JACOBI) {
+            solver = &FluidSimulation::solveWithJacobi;
+            std::cout << "Solver: Jacobi" << std::endl;
+        }
+        else if (this->solver_type == SolverType::CONJUGATED_GRADIENT) {
+            solver = &FluidSimulation::solveWithConjugatedGradient;
+            std::cout << "Solver: Conjugated Gradient" << std::endl;
+        }
+
+        while(this->t < this->t_end) {
+            n = 0;
+            this->selectDtAccordingToStabilityCondition();
+            // print dt and residual
+            std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
+            this->setBoundaryConditionsU();
+            this->setBoundaryConditionsV();
+            this->setBoundaryConditionsVelocityGeometry();
+            this->computeF();
+            this->computeG();
+            this->setBoundaryConditionsVelocityGeometry();
+            this->computeRHS();
+            while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
+                this->setBoundaryConditionsP();
+                this->setBoundaryConditionsPGeometry();
+                
+                (this->*solver)();
+
+                this->computeResidual();
+                n++;
+            }
+            this->computeU();
+            this->computeV();
+            this->t = this->t + this->dt;
+            this->setBoundaryConditionsU();
+            this->setBoundaryConditionsV();
+            this->setBoundaryConditionsVelocityGeometry();
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            if (std::abs(t - std::round(t)) < 0.1) {
+                this->grid.interpolateVelocity();
+                this->setBoundaryConditionsInterpolatedVelocityGeometry();
+                saveVTK(this);
+            }
+        }
+
+        this->setBoundaryConditionsU();
+        this->setBoundaryConditionsV();
+        this->setBoundaryConditionsVelocityGeometry();
+
+        this->grid.interpolateVelocity();
+
+        this->setBoundaryConditionsInterpolatedVelocityGeometry();
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
+
+        return;
     }
 
     void FluidSimulation::saveMatrices() {

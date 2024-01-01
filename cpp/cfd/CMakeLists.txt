@@ -32,7 +32,7 @@ set(CFD_SOURCES
 add_library(cfd STATIC ${CFD_SOURCES})
 target_compile_options(cfd PRIVATE)
 target_include_directories(cfd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(cfd Eigen3::Eigen kernel ${VTK_LIBRARIES})
+target_link_libraries(cfd Eigen3::Eigen kernel solvers ${VTK_LIBRARIES})
 
 # Compile CFD Programs 
 ## Lid Driven Cavity 2D

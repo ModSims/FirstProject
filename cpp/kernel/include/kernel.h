@@ -6,10 +6,12 @@ namespace Kernel {
     using namespace Eigen;
     class Timer {
     public:
+        Timer() {};
         Timer(double dt) : m_dt(dt) {};
         void start();
         void update();
         void stop();
+        void reset();
         bool isStarted() const;
         bool isStopped() const;
         int getCurrentTimeStep() const;

@@ -3,9 +3,24 @@
 using namespace Solvers;
 using namespace Eigen;
 
-VectorXd Trivial::phi(MatrixXd& A, VectorXd& x, VectorXd& b) {
-    MatrixXd M = MatrixXd::Identity(A.rows(), A.cols()) - A;
-    MatrixXd N = MatrixXd::Identity(A.rows(), A.cols());
-    
-    return M * x + N * b;
+void Trivial::prepareSolver() {
+    return;
+}
+
+VectorXd Trivial::phi(SolverData *data) {
+    const int size = data->A.rows();
+    VectorXd& x = data->x;
+    const VectorXd& b = data->b;
+
+    // Identity matrices
+    MatrixXd M = MatrixXd::Identity(size, size) - data->A;
+    MatrixXd N = MatrixXd::Identity(size, size);
+
+    // Perform Trivial iteration directly on vector x
+    x = M * x + N * b;
+
+    // Calculate the residual term (b - Ax)
+    VectorXd residual = b - data->A * x;
+
+    return residual;
 }

@@ -100,52 +100,7 @@ void KarmanVortexStreet2D::run() {
     }
     std::exit(0);*/
 
-    int n = 0;
-
-    while(this->t < this->t_end) {
-        n = 0;
-        this->selectDtAccordingToStabilityCondition();
-        // print dt and residual
-        std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
-        this->setBoundaryConditionsU();
-        this->setBoundaryConditionsV();
-        this->setBoundaryConditionsVelocityGeometry();
-        this->computeF();
-        this->computeG();
-        this->setBoundaryConditionsVelocityGeometry();
-        this->computeRHS();
-        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
-            this->solveWithJacobi();
-            this->computeResidual();
-            n++;
-        }
-        this->computeU();
-        this->computeV();
-        this->grid.po = this->grid.p;
-        this->t = this->t + this->dt;
-        this->setBoundaryConditionsU();
-        this->setBoundaryConditionsV();
-        this->setBoundaryConditionsVelocityGeometry();
-        this->setBoundaryConditionsP();
-        this->setBoundaryConditionsPGeometry();
-        if (std::abs(t - std::round(t)) < 0.1) {
-            this->grid.interpolateVelocity();
-            this->setBoundaryConditionsInterpolatedVelocityGeometry();
-            saveVTK(this);
-        }
-    }
-
-    this->setBoundaryConditionsU();
-    this->setBoundaryConditionsV();
-    this->setBoundaryConditionsVelocityGeometry();
-
-    this->grid.interpolateVelocity();
-
-    this->setBoundaryConditionsInterpolatedVelocityGeometry();
-    this->setBoundaryConditionsP();
-    this->setBoundaryConditionsPGeometry();
+    FluidSimulation::run();
 
     return;
 }

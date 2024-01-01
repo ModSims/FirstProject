@@ -28,14 +28,15 @@ MatrixXd generateMatrix(int n) {
     return A / (h * h);
 }
 
-std::tuple<MatrixXd, VectorXd, VectorXd> prepareProblem(int n) {
-    MatrixXd A = generateMatrix(n);
-    VectorXd x = VectorXd::Zero(n);
-    VectorXd b = VectorXd::Zero(n);
-    b(0) = 0.0;  // Dirichlet boundary condition
-    b(n - 1) = 1.0;  // Dirichlet boundary condition
+SolverData prepareProblem(int n) {
+    SolverData data;
+    data.A = generateMatrix(n);
+    data.x = VectorXd::Zero(n);
+    data.b = VectorXd::Zero(n);
+    data.b(0) = 0.0;  // Dirichlet boundary condition
+    data.b(n - 1) = 1.0;  // Dirichlet boundary condition
 
-    return std::make_tuple(A, x, b);
+    return data;
 }
 
 int main(int argc, char** argv) {
@@ -49,19 +50,19 @@ int main(int argc, char** argv) {
     // Conjugate Gradient
 
     Timer timer256 = Timer(dt);
-    auto solver256 = Solvers::ConjugateGradient(std::get<0>(P256), std::get<1>(P256), std::get<2>(P256), &timer256);
+    auto solver256 = Solvers::ConjugateGradient(&P256, &timer256);
     solver256.prepareSolver();
 
     Timer timer512 = Timer(dt);
-    auto solver512 = Solvers::ConjugateGradient(std::get<0>(P512), std::get<1>(P512), std::get<2>(P512), &timer512);
+    auto solver512 = Solvers::ConjugateGradient(&P512, &timer512);
     solver512.prepareSolver();
 
     Timer timer1024 = Timer(dt);
-    auto solver1024 = Solvers::ConjugateGradient(std::get<0>(P1024), std::get<1>(P1024), std::get<2>(P1024), &timer1024);
+    auto solver1024 = Solvers::ConjugateGradient(&P1024, &timer1024);
     solver1024.prepareSolver();
 
     Timer timer2048 = Timer(dt);
-    auto solver2048 = Solvers::ConjugateGradient(std::get<0>(P2048), std::get<1>(P2048), std::get<2>(P2048), &timer2048);
+    auto solver2048 = Solvers::ConjugateGradient(&P2048, &timer2048);
     solver2048.prepareSolver();
 
     timer256.start();
@@ -98,26 +99,26 @@ int main(int argc, char** argv) {
     // Preconditioned Conjugate Gradient
 
     Timer timer_p256 = Timer(dt);
-    auto solver_p256 = Solvers::PreconditionedConjugateGradient(std::get<0>(P256), std::get<1>(P256), std::get<2>(P256), &timer_p256);
-    MatrixXd C256 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P256)).getP();
+    auto solver_p256 = Solvers::PreconditionedConjugateGradient(&P256, &timer_p256);
+    MatrixXd C256 = Maths::Matrix::IncompleteCholeskyDecomposition(P256.A).getP();
     solver_p256.setPreconditioner(C256);
     solver_p256.prepareSolver();
 
     Timer timer_p512 = Timer(dt);
-    auto solver_p512 = Solvers::PreconditionedConjugateGradient(std::get<0>(P512), std::get<1>(P512), std::get<2>(P512), &timer_p512);
-    MatrixXd C512 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P512)).getP();
+    auto solver_p512 = Solvers::PreconditionedConjugateGradient(&P512, &timer_p512);
+    MatrixXd C512 = Maths::Matrix::IncompleteCholeskyDecomposition(P512.A).getP();
     solver_p512.setPreconditioner(C512);
     solver_p512.prepareSolver();
 
     Timer timer_p1024 = Timer(dt);
-    auto solver_p1024 = Solvers::PreconditionedConjugateGradient(std::get<0>(P1024), std::get<1>(P1024), std::get<2>(P1024), &timer_p1024);
-    MatrixXd C1024 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P1024)).getP();
+    auto solver_p1024 = Solvers::PreconditionedConjugateGradient(&P1024, &timer_p1024);
+    MatrixXd C1024 = Maths::Matrix::IncompleteCholeskyDecomposition(P1024.A).getP();
     solver_p1024.setPreconditioner(C1024);
     solver_p1024.prepareSolver();
 
     Timer timer_p2048 = Timer(dt);
-    auto solver_p2048 = Solvers::PreconditionedConjugateGradient(std::get<0>(P2048), std::get<1>(P2048), std::get<2>(P2048), &timer_p2048);
-    MatrixXd C2048 = Maths::Matrix::IncompleteCholeskyDecomposition(std::get<0>(P2048)).getP();
+    auto solver_p2048 = Solvers::PreconditionedConjugateGradient(&P2048, &timer_p2048);
+    MatrixXd C2048 = Maths::Matrix::IncompleteCholeskyDecomposition(P2048.A).getP();
     solver_p2048.setPreconditioner(C2048);
     solver_p2048.prepareSolver();
 

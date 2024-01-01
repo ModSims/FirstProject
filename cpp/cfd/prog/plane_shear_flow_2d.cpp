@@ -20,6 +20,8 @@ int main(int argc, char* argv[]) {
     program.add_argument("-r", "--Re").help("Re").default_value(100.0).action([](const std::string& value) { return std::stod(value); });
     program.add_argument("-t", "--t").help("t").default_value(0.0).action([](const std::string& value) { return std::stod(value); });
     program.add_argument("-d", "--dt").help("dt").default_value(0.05).action([](const std::string& value) { return std::stod(value); });
+    program.add_argument("-s", "--solver").help("solver").default_value("jacobi").action([](const std::string& value) { return value; });
+
 
     try {
         program.parse_args(argc, argv);
@@ -30,6 +32,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    SolverType solver_type = convertSolverType(program.get<std::string>("--solver"));
     PlaneShearFlow2D sim = PlaneShearFlow2D(
         program.get<int>("--imax"),
         program.get<int>("--jmax"),
@@ -43,7 +46,8 @@ int main(int argc, char* argv[]) {
         program.get<double>("--alpha"),
         program.get<double>("--Re"),
         program.get<double>("--t"),
-        program.get<double>("--dt")
+        program.get<double>("--dt"),
+        solver_type
     );
     sim.run();
     sim.saveMatrices();
