@@ -117,6 +117,7 @@ dependencies:
   - zlib=1.2.13
   - zstandard=0.21.0
   - zstd=1.5.5
+  - vtk=9.0.0
   - pip:
       - contourpy==1.1.1
       - cycler==0.11.0
