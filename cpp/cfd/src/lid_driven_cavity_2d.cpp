@@ -1,9 +1,5 @@
 #include <iostream>
-#include "cfd.h"
-
-
-#include <Eigen/Dense>
-#include <Eigen/Sparse>
+#include "simulations.h"
 
 using namespace CFD;
 

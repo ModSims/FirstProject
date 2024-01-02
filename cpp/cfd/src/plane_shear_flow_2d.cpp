@@ -1,5 +1,5 @@
 #include <iostream>
-#include "cfd.h"
+#include "simulations.h"
 
 using namespace CFD;
 

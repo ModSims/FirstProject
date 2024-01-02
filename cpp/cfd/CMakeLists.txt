@@ -3,8 +3,10 @@ project(cfd)
 find_package(Eigen3 REQUIRED COMPONENTS CXX)
 
 set(CFD_SOURCES
+    src/cfd_params.cpp
     src/cfd.cpp
     src/vtk.cpp
+    src/multigrid.cpp
     src/lid_driven_cavity_2d.cpp
     src/flow_over_step_2d.cpp
     src/karman_vortex_street_2d.cpp
@@ -22,12 +24,10 @@ target_link_libraries(
     solvers 
     VTK::CommonDataModel
     VTK::CommonCore
-    VTK::CommonExecutionModel
     VTK::CommonMath
     VTK::CommonMisc
     VTK::CommonSystem
     VTK::CommonTransforms
-    VTK::IOCore
     VTK::IOLegacy
     VTK::IOParallelXML
     VTK::IOXML

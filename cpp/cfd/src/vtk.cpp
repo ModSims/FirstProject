@@ -14,7 +14,7 @@ void CFD::saveVTK(FluidSimulation* sim) {
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
     for (int j = 0; j < sim->jmax; ++j) {
         for (int i = 0; i < sim->imax; ++i) {
-            points->InsertNextPoint(i * sim->grid.dx(), j * sim->grid.dy(), 0);
+            points->InsertNextPoint(i * sim->grid.dx, j * sim->grid.dy, 0);
         }
     }
 
@@ -46,9 +46,8 @@ void CFD::saveVTK(FluidSimulation* sim) {
     vtk_grid->GetPointData()->AddArray(velocity_array);
 
     vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
-    int floored_t = floor(sim->t);
     char filename[100];
-    sprintf(filename, "output_%d.vts", floored_t);
+    sprintf(filename, "output_%.1f.vts", sim->t);
     writer->SetFileName(filename);
     writer->SetInputData(vtk_grid);
     writer->Write();
