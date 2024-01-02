@@ -1,23 +1,6 @@
 project(cfd)
 
 find_package(Eigen3 REQUIRED COMPONENTS CXX)
-find_package(VTK REQUIRED COMPONENTS
-    CommonDataModel
-    CommonCore
-    CommonExecutionModel
-    CommonMath
-    CommonMisc
-    CommonSystem
-    CommonTransforms
-    IOCore
-    IOLegacy
-    IOParallelXML
-    IOXML
-    IOXMLParser
-    ParallelCore
-    FiltersCore
-    vtksys
-)
 
 set(CFD_SOURCES
     src/cfd.cpp
@@ -32,7 +15,27 @@ set(CFD_SOURCES
 add_library(cfd STATIC ${CFD_SOURCES})
 target_compile_options(cfd PRIVATE)
 target_include_directories(cfd PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
-target_link_libraries(cfd Eigen3::Eigen kernel solvers ${VTK_LIBRARIES})
+target_link_libraries(
+    cfd 
+    Eigen3::Eigen 
+    kernel 
+    solvers 
+    VTK::CommonDataModel
+    VTK::CommonCore
+    VTK::CommonExecutionModel
+    VTK::CommonMath
+    VTK::CommonMisc
+    VTK::CommonSystem
+    VTK::CommonTransforms
+    VTK::IOCore
+    VTK::IOLegacy
+    VTK::IOParallelXML
+    VTK::IOXML
+    VTK::IOXMLParser
+    VTK::ParallelCore
+    VTK::FiltersCore
+    VTK::vtksys
+)
 
 # Compile CFD Programs 
 ## Lid Driven Cavity 2D

@@ -45,3 +45,4 @@ out/
 *.mtx
 __pycache__/
 *.dat
+cpp/extern/

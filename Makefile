@@ -13,7 +13,7 @@ configure: build_folder_check
 	cd cpp/build && cmake -DCMAKE_PREFIX_PATH=${CONDA_PREFIX} -DEIGEN_TEST_NOQT=ON ..
 
 build: build_folder_check
-	cd cpp/build && make
+	cd cpp/build && make -j
 
 test: build_folder_check
 	cd cpp/build && make test
@@ -34,6 +34,11 @@ export_env:
 install_python_library:
 	conda develop -u $(shell pwd)/out/lib/ || true
 	conda develop $(shell pwd)/out/lib/
+
+clone_vtk:
+	@if [ ! -d "cpp/extern/vtk" ]; then \
+		git clone --depth 1 --branch v9.1.0 git@github.com:Kitware/VTK.git cpp/extern/vtk; \
+	fi
 
 all: build_folder_check configure build install_python_library test
 

@@ -207,7 +207,15 @@ namespace CFD {
 
     void FluidSimulation::computeResidual() {
         this->grid.res = this->grid.p - this->grid.po;
-        this->res_norm = this->grid.res.norm();
+        // calculate mean absolute residual
+        this->res_norm = 0.0;
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.res(i,j) = abs(abs(this->grid.p(i,j)) - abs(this->grid.po(i,j)));
+                this->res_norm += this->grid.res(i,j);
+            }
+        }
+        this->res_norm = this->res_norm / (this->grid.imax * this->grid.jmax);
     }
 
     void FluidSimulation::computeU() {
@@ -426,6 +434,8 @@ namespace CFD {
             this->computeG();
             this->setBoundaryConditionsVelocityGeometry();
             this->computeRHS();
+            // reset norm check
+            this->res_norm = 0.0;
             while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
                 this->setBoundaryConditionsP();
                 this->setBoundaryConditionsPGeometry();
