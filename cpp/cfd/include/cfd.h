@@ -47,7 +47,7 @@ namespace CFD {
             double t_end = 5.0;
             double tau = 0.5;
             double eps = 1e-3;
-            double omg = 1.7;
+            double omg = 1.0;
             int itermax = 100;
             double alpha = 0.9;
             double Re = 100.0;
@@ -95,6 +95,7 @@ namespace CFD {
             double t;
             double dt;
             double res_norm;
+            int it = 0;
             StaggeredGrid grid;
             Kernel::Timer timer;
             SolverType solver_type;

@@ -47,7 +47,7 @@ void CFD::saveVTK(FluidSimulation* sim) {
 
     vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
     char filename[100];
-    sprintf(filename, "output_%.1f.vts", sim->t);
+    sprintf(filename, "output_%d.vts", sim->it);
     writer->SetFileName(filename);
     writer->SetInputData(vtk_grid);
     writer->Write();

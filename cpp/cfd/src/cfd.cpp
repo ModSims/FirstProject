@@ -192,15 +192,7 @@ namespace CFD {
 
     void FluidSimulation::computeResidual() {
         this->grid.res = this->grid.p - this->grid.po;
-        // calculate mean absolute residual
-        this->res_norm = 0.0;
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.res(i,j) = abs(abs(this->grid.p(i,j)) - abs(this->grid.po(i,j)));
-                this->res_norm += this->grid.res(i,j);
-            }
-        }
-        this->res_norm = this->res_norm / (this->grid.imax * this->grid.jmax);
+        this->res_norm = this->grid.res.norm();
     }
 
     void FluidSimulation::computeU() {
@@ -341,67 +333,115 @@ namespace CFD {
     }
 
     void FluidSimulation::solveWithJacobi() {
-        this->grid.po = this->grid.p;
-        
-        // Jacobi smoother with relaxation factor (omega)
-        for (int i = 1; i <= this->grid.imax; i++) {
-            for (int j = 1; j <= this->grid.jmax; j++) {
-                this->grid.p(i, j) = (1 - this->omg) * this->grid.p(i, j) +
-                                    this->omg * 0.25 * (
-                                        this->grid.p(i - 1, j) + this->grid.p(i + 1, j) +
-                                        this->grid.p(i, j - 1) + this->grid.p(i, j + 1)
-                                        - this->grid.dxdy * (this->grid.RHS(i, j))
-                                    ) / (1 + 2 * (this->grid.dx2 + this->grid.dy2));
+        // reset norm check
+        this->res_norm = 0.0;
+        int n = 0;
+
+        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            this->grid.po = this->grid.p;
+
+            // Jacobi smoother with relaxation factor (omega)
+            for (int i = 1; i <= this->grid.imax; i++) {
+                for (int j = 1; j <= this->grid.jmax; j++) {
+                    this->grid.p(i, j) = (1 - this->omg) * this->grid.p(i, j) +
+                                        this->omg * 0.25 * (
+                                            this->grid.p(i - 1, j) + this->grid.p(i + 1, j) +
+                                            this->grid.p(i, j - 1) + this->grid.p(i, j + 1)
+                                            - this->grid.dxdy * (this->grid.RHS(i, j))
+                                        ) / (1 + 2 * (this->grid.dx2 + this->grid.dy2));
+                }
             }
+
+            this->computeResidual();
+            n++;
         }
     }
 
 
     void FluidSimulation::solveWithMultigridJacobi() {
-        this->grid.po = this->grid.p;
-        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
+        // reset norm check
+        this->res_norm = 0.0;
+        int n = 0;
+
+        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            this->grid.po = this->grid.p;
+
+            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
+
+            this->computeResidual();
+            n++;
+        }
     }
 
     void FluidSimulation::solveWithConjugatedGradient() {
-        this->grid.po = this->grid.p;
-
+        // reset norm check
+        this->res_norm = 0.0;
+        int n = 0;
         double alpha_top = 0.0;
         double alpha_bottom = 0.0;
-        // Calculating residual vector of Ax=b
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.res(i,j) = this->grid.RHS(i,j) - (
-                    (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
-                    (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
-                );
-                alpha_top += this->grid.res(i,j)*this->grid.res(i,j);
+        int maxiterations = std::max(this->grid.imax, this->grid.jmax);
+
+        while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            this->grid.po = this->grid.p;
+
+            alpha_top = 0.0;
+            alpha_bottom = 0.0;
+            // Calculating residual vector of Ax=b
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                        (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
+                        (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
+                    );
+                    alpha_top += this->grid.res(i,j)*this->grid.res(i,j);
+                }
             }
-        }
-        // Laplacian operator of grid.res, because of dot product of <res, Ares>, A-Matrix is the laplacian operator
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.Ares(i,j) = (
-                    (1/this->grid.dx2)*(this->grid.res(i+1,j) - 2*this->grid.res(i,j) + this->grid.res(i-1,j)) +
-                    (1/this->grid.dy2)*(this->grid.res(i,j+1) - 2*this->grid.res(i,j) + this->grid.res(i,j-1))
-                );
-                alpha_bottom += this->grid.res(i,j)*this->grid.Ares(i,j);
+            // Laplacian operator of grid.res, because of dot product of <res, Asearch_vector>, A-Matrix is the laplacian operator
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.Asearch_vector(i,j) = (
+                        (1/this->grid.dx2)*(this->grid.res(i+1,j) - 2*this->grid.res(i,j) + this->grid.res(i-1,j)) +
+                        (1/this->grid.dy2)*(this->grid.res(i,j+1) - 2*this->grid.res(i,j) + this->grid.res(i,j-1))
+                    );
+                    alpha_bottom += this->grid.res(i,j)*this->grid.Asearch_vector(i,j);
+                }
             }
-        }
-        // Update pressure and new residual
-        double alpha = alpha_top/alpha_bottom;
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.p(i,j) += alpha*this->grid.res(i,j);
+            // Update pressure and new residual
+            double alpha = alpha_top/alpha_bottom;
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.p(i,j) += alpha*this->grid.res(i,j);
+                }
             }
+
+            this->computeResidual();
+            n++;
         }
     }
 
     void FluidSimulation::solveWithMultigridPCG() {
-        this->grid.po = this->grid.p;
-        
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
+
+        // reset norm check
+        this->res_norm = 0.0;
+        int n = 0;
+        double alpha = 0.0;
         double alpha_top = 0.0;
         double alpha_bottom = 0.0;
-        // Calculating residual vector of Ax=b
+        double beta = 0.0;
+        double beta_top = 0.0;
+        double beta_bottom = 0.0;
+
+        int maxiterations = std::max(this->grid.imax, this->grid.jmax);
+
+        // Initial residual vector of Ax=b
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
                 this->grid.res(i,j) = this->grid.RHS(i,j) - (
@@ -410,46 +450,82 @@ namespace CFD {
                 );
                 // copy residual to preconditioner and reset grids
                 this->preconditioner.RHS(i,j) = this->grid.res(i,j);
+                this->preconditioner.p(i,j) = 0.0;
             }
         }
 
+        // Initial guess for error vector
         Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
 
-        // Laplacian operator of grid.res, because of dot product of <res, Ares>, A-Matrix is the laplacian operator
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.Ares(i,j) = (
-                    (1/this->grid.dx2)*(this->preconditioner.p(i+1,j) - 2*this->preconditioner.p(i,j) + this->preconditioner.p(i-1,j)) +
-                    (1/this->grid.dy2)*(this->preconditioner.p(i,j+1) - 2*this->preconditioner.p(i,j) + this->preconditioner.p(i,j-1))
-                );
-                alpha_top += this->preconditioner.p(i,j)*this->grid.res(i,j);
-                alpha_bottom += this->preconditioner.p(i,j)*this->grid.Ares(i,j);
+        // Initial search vector
+        this->grid.search_vector = this->preconditioner.p;
+
+        while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+            this->grid.po = this->grid.p;
+
+            alpha_top = 0.0;
+            alpha_bottom = 0.0;
+
+            // Calculate alpha
+            // Laplacian operator of error_vector from multigrid, because of dot product of <A, Pi>, A-Matrix is the laplacian operator
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.Asearch_vector(i,j) = (
+                        (1/this->grid.dx2)*(this->grid.search_vector(i+1,j) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i-1,j)) +
+                        (1/this->grid.dy2)*(this->grid.search_vector(i,j+1) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i,j-1))
+                    );
+                    alpha_top += this->preconditioner.p(i,j)*this->grid.res(i,j);
+                    alpha_bottom += this->grid.search_vector(i,j)*this->grid.Asearch_vector(i,j);
+                }
             }
-        }
-        // Update pressure and new residual
-        double alpha = alpha_top/alpha_bottom;
-        for (int i = 1; i < this->grid.imax + 1; i++) {
-            for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.p(i,j) += alpha*this->preconditioner.p(i,j);
-                this->preconditioner.p(i,j) -= alpha*this->grid.Ares(i,j);
+            alpha = alpha_top/alpha_bottom;
+
+            // Update pressure and new residual
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.p(i,j) += alpha*this->grid.search_vector(i,j);
+                    this->grid.res(i,j) -= alpha*this->grid.Asearch_vector(i,j);
+                    this->preconditioner.RHS(i,j) = this->grid.res(i,j);
+                }
             }
+            
+            // New guess for error vector
+            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
+
+            // Calculate beta
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    beta_top += this->preconditioner.p(i,j)*this->grid.res(i,j);
+                }
+            }
+            beta = beta_top/alpha_top;
+
+            // Calculate new search vector
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.search_vector(i,j) = this->preconditioner.p(i,j) + beta*this->grid.search_vector(i,j);
+                }
+            }
+
+            this->res_norm = (this->grid.po - this->grid.p).norm();
+            n++;
         }
     }
 
     void FluidSimulation::run() {
-        int n = 0;
-        int it = 0;
         double last_saved = 0.0;
 
         // Function pointer to solver
-        void (CFD::FluidSimulation::*solver)();
+        void (CFD::FluidSimulation::*pressure_solver)();
 
         if (this->solver_type == SolverType::JACOBI) {
-            solver = &FluidSimulation::solveWithJacobi;
+            pressure_solver = &FluidSimulation::solveWithJacobi;
             std::cout << "Solver: Jacobi" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_JACOBI) {
-            solver = &FluidSimulation::solveWithMultigridJacobi;
+            pressure_solver = &FluidSimulation::solveWithMultigridJacobi;
 
             // check if imax and jmax are powers of 2, if not throw exception
             if ((this->grid.imax & (this->grid.imax - 1)) != 0 || (this->grid.jmax & (this->grid.jmax - 1)) != 0) {
@@ -465,11 +541,11 @@ namespace CFD {
             std::cout << "Solver: Multigrid Jacobi" << std::endl;
         }
         else if (this->solver_type == SolverType::CONJUGATED_GRADIENT) {
-            solver = &FluidSimulation::solveWithConjugatedGradient;
+            pressure_solver = &FluidSimulation::solveWithConjugatedGradient;
             std::cout << "Solver: Conjugated Gradient" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_PCG) {
-            solver = &FluidSimulation::solveWithMultigridPCG;
+            pressure_solver = &FluidSimulation::solveWithMultigridPCG;
 
             // check if imax and jmax are powers of 2, if not throw exception
             if ((this->grid.imax & (this->grid.imax - 1)) != 0 || (this->grid.jmax & (this->grid.jmax - 1)) != 0) {
@@ -492,7 +568,6 @@ namespace CFD {
 
 
         while(this->t < this->t_end) {
-            n = 0;
             this->selectDtAccordingToStabilityCondition();
             this->setBoundaryConditionsU();
             this->setBoundaryConditionsV();
@@ -501,26 +576,19 @@ namespace CFD {
             this->computeG();
             this->setBoundaryConditionsVelocityGeometry();
             this->computeRHS();
-            // reset norm check
-            this->res_norm = 0.0;
-            while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
-                this->setBoundaryConditionsP();
-                this->setBoundaryConditionsPGeometry();
                 
-                (this->*solver)();
+            (this->*pressure_solver)();
 
-                this->computeResidual();
-                this->res_norm_over_time(it) = this->res_norm;
-                it++;
-                n++;
-            }
+            this->computeResidual();
+            this->res_norm_over_time(this->it) = this->res_norm;
+            this->it++;
+
+            this->setBoundaryConditionsP();
             this->computeU();
             this->computeV();
-            this->t = this->t + this->dt;
             this->setBoundaryConditionsU();
             this->setBoundaryConditionsV();
             this->setBoundaryConditionsVelocityGeometry();
-            this->setBoundaryConditionsP();
             this->setBoundaryConditionsPGeometry();
             // print dt and residual
             std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm;
@@ -532,6 +600,7 @@ namespace CFD {
                 std::cout << " VTK saved!!!";
             }
             std::cout << std::endl;
+            this->t = this->t + this->dt;
         }
 
         this->setBoundaryConditionsU();
@@ -544,7 +613,7 @@ namespace CFD {
         this->setBoundaryConditionsP();
         this->setBoundaryConditionsPGeometry();
 
-        this->res_norm_over_time.conservativeResize(it);
+        this->res_norm_over_time.conservativeResize(this->it);
 
         return;
     }
