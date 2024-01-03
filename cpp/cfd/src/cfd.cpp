@@ -2,21 +2,6 @@
 #include "cfd.h"
 
 namespace CFD {
-    SolverType convertSolverType(const std::string& solver) {
-        if (solver == "jacobi") {
-            return SolverType::JACOBI;
-        }
-        else if (solver == "multigrid_jacobi") {
-            return SolverType::MULTIGRID_JACOBI;
-        }
-        else if (solver == "conjugated_gradient") {
-            return SolverType::CONJUGATED_GRADIENT;
-        }
-        else {
-            throw std::invalid_argument("Invalid solver type");
-        }
-    }
-
     namespace ME_X {
         // Slide 15
         double uu_x(StaggeredGrid *grid, FluidSimulation *sim, int i, int j) {
@@ -379,6 +364,7 @@ namespace CFD {
 
     void FluidSimulation::solveWithConjugatedGradient() {
         this->grid.po = this->grid.p;
+
         double alpha_top = 0.0;
         double alpha_bottom = 0.0;
         // Calculating residual vector of Ax=b
@@ -402,10 +388,50 @@ namespace CFD {
             }
         }
         // Update pressure and new residual
-        double lambda = alpha_top/alpha_bottom;
+        double alpha = alpha_top/alpha_bottom;
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.p(i,j) += lambda*this->grid.res(i,j);
+                this->grid.p(i,j) += alpha*this->grid.res(i,j);
+            }
+        }
+    }
+
+    void FluidSimulation::solveWithMultigridPCG() {
+        this->grid.po = this->grid.p;
+        
+        double alpha_top = 0.0;
+        double alpha_bottom = 0.0;
+        // Calculating residual vector of Ax=b
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                    (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
+                    (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
+                );
+                // copy residual to preconditioner and reset grids
+                this->preconditioner.RHS(i,j) = this->grid.res(i,j);
+            }
+        }
+
+        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
+
+        // Laplacian operator of grid.res, because of dot product of <res, Ares>, A-Matrix is the laplacian operator
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.Ares(i,j) = (
+                    (1/this->grid.dx2)*(this->preconditioner.p(i+1,j) - 2*this->preconditioner.p(i,j) + this->preconditioner.p(i-1,j)) +
+                    (1/this->grid.dy2)*(this->preconditioner.p(i,j+1) - 2*this->preconditioner.p(i,j) + this->preconditioner.p(i,j-1))
+                );
+                alpha_top += this->preconditioner.p(i,j)*this->grid.res(i,j);
+                alpha_bottom += this->preconditioner.p(i,j)*this->grid.Ares(i,j);
+            }
+        }
+        // Update pressure and new residual
+        double alpha = alpha_top/alpha_bottom;
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.p(i,j) += alpha*this->preconditioner.p(i,j);
+                this->preconditioner.p(i,j) -= alpha*this->grid.Ares(i,j);
             }
         }
     }
@@ -442,6 +468,28 @@ namespace CFD {
             solver = &FluidSimulation::solveWithConjugatedGradient;
             std::cout << "Solver: Conjugated Gradient" << std::endl;
         }
+        else if (this->solver_type == SolverType::MULTIGRID_PCG) {
+            solver = &FluidSimulation::solveWithMultigridPCG;
+
+            // check if imax and jmax are powers of 2, if not throw exception
+            if ((this->grid.imax & (this->grid.imax - 1)) != 0 || (this->grid.jmax & (this->grid.jmax - 1)) != 0) {
+                throw std::invalid_argument("imax and jmax must be powers of 2");
+            }
+
+            int imax_levels = std::log2(this->grid.imax);
+            int jmax_levels = std::log2(this->grid.jmax);
+            int levels = std::min(imax_levels, jmax_levels);
+
+            this->preconditioner = StaggeredGrid(this->grid.imax, this->grid.jmax, this->grid.xlength, this->grid.ylength);
+
+            this->multigrid_hierarchy = new MultigridHierarchy(levels, &this->preconditioner);
+
+            std::cout << "Solver: Multigrid PCG" << std::endl;
+        }
+        else {
+            throw std::invalid_argument("Invalid solver type");
+        }
+
 
         while(this->t < this->t_end) {
             n = 0;

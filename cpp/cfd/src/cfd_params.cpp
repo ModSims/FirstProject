@@ -1,6 +1,26 @@
 #include "cfd.h"
 
-CFD::FluidParams::FluidParams(std::string name, int argc, char* argv[]) 
+using namespace CFD;
+
+SolverType CFD::convertSolverType(const std::string& solver) {
+    if (solver == "jacobi") {
+        return SolverType::JACOBI;
+    }
+    else if (solver == "multigrid_jacobi") {
+        return SolverType::MULTIGRID_JACOBI;
+    }
+    else if (solver == "conjugated_gradient") {
+        return SolverType::CONJUGATED_GRADIENT;
+    }
+    else if (solver == "multigrid_pcg") {
+        return SolverType::MULTIGRID_PCG;
+    }
+    else {
+        throw std::invalid_argument("Invalid solver type");
+    }
+}
+
+FluidParams::FluidParams(std::string name, int argc, char* argv[]) 
     : argument_parser(name)
 {
     this->argument_parser.add_argument("-i", "--imax").help("imax").default_value(this->imax).action([](const std::string& value) { return std::stoi(value); });

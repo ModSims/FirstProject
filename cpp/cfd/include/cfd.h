@@ -32,7 +32,8 @@ namespace CFD {
     enum SolverType {
         JACOBI,
         MULTIGRID_JACOBI,
-        CONJUGATED_GRADIENT
+        CONJUGATED_GRADIENT,
+        MULTIGRID_PCG
     };
     SolverType convertSolverType(const std::string& solver);
 
@@ -103,6 +104,9 @@ namespace CFD {
             // Multigrid components
             MultigridHierarchy *multigrid_hierarchy;
 
+            // Preconditioner Conjugated Gradient components
+            StaggeredGrid preconditioner;
+
             void selectDtAccordingToStabilityCondition();
             void computeF();
             void computeG();
@@ -110,6 +114,7 @@ namespace CFD {
             void solveWithJacobi();
             void solveWithMultigridJacobi();
             void solveWithConjugatedGradient();
+            void solveWithMultigridPCG();
             void computeResidual();
             void computeU();
             void computeV();
