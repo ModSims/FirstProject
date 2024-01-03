@@ -28,6 +28,12 @@ target_link_libraries(
     VTK::CommonMisc
     VTK::CommonSystem
     VTK::CommonTransforms
+    VTK::IOLegacy
+    VTK::IOParallelXML
+    VTK::IOXML
+    VTK::IOXMLParser
+    VTK::ParallelCore
+    VTK::FiltersCore
     VTK::vtksys
 )
 
