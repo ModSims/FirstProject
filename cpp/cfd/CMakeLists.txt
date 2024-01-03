@@ -28,7 +28,6 @@ target_link_libraries(
     VTK::CommonMisc
     VTK::CommonSystem
     VTK::CommonTransforms
-    VTK::FiltersCore
     VTK::vtksys
 )
 
