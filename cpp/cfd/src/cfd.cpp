@@ -378,49 +378,68 @@ namespace CFD {
     }
 
     void FluidSimulation::solveWithConjugatedGradient() {
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
+
         // reset norm check
         this->res_norm = 0.0;
         int n = 0;
+        double lambda = 0.0;
         double alpha_top = 0.0;
         double alpha_bottom = 0.0;
+        double alpha_top_new = 0.0;
         int maxiterations = std::max(this->grid.imax, this->grid.jmax);
+
+        // Initial residual vector of Ax=b
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
+                this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                    (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
+                    (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
+                );
+                // copy residual to search_vector
+                this->grid.search_vector(i,j) = this->grid.res(i,j);
+                alpha_top += this->grid.res(i,j)*this->grid.res(i,j);
+            }
+        }
 
         while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
             this->setBoundaryConditionsP();
             this->setBoundaryConditionsPGeometry();
             this->grid.po = this->grid.p;
 
-            alpha_top = 0.0;
             alpha_bottom = 0.0;
-            // Calculating residual vector of Ax=b
-            for (int i = 1; i < this->grid.imax + 1; i++) {
-                for (int j = 1; j < this->grid.jmax + 1; j++) {
-                    this->grid.res(i,j) = this->grid.RHS(i,j) - (
-                        (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
-                        (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
-                    );
-                    alpha_top += this->grid.res(i,j)*this->grid.res(i,j);
-                }
-            }
             // Laplacian operator of grid.res, because of dot product of <res, Asearch_vector>, A-Matrix is the laplacian operator
             for (int i = 1; i < this->grid.imax + 1; i++) {
                 for (int j = 1; j < this->grid.jmax + 1; j++) {
                     this->grid.Asearch_vector(i,j) = (
-                        (1/this->grid.dx2)*(this->grid.res(i+1,j) - 2*this->grid.res(i,j) + this->grid.res(i-1,j)) +
-                        (1/this->grid.dy2)*(this->grid.res(i,j+1) - 2*this->grid.res(i,j) + this->grid.res(i,j-1))
+                        (1/this->grid.dx2)*(this->grid.search_vector(i+1,j) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i-1,j)) +
+                        (1/this->grid.dy2)*(this->grid.search_vector(i,j+1) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i,j-1))
                     );
-                    alpha_bottom += this->grid.res(i,j)*this->grid.Asearch_vector(i,j);
+                    alpha_bottom += this->grid.search_vector(i,j)*this->grid.Asearch_vector(i,j);
                 }
             }
             // Update pressure and new residual
-            double alpha = alpha_top/alpha_bottom;
+            lambda = alpha_top/alpha_bottom;
+            alpha_top_new = 0.0;
             for (int i = 1; i < this->grid.imax + 1; i++) {
                 for (int j = 1; j < this->grid.jmax + 1; j++) {
-                    this->grid.p(i,j) += alpha*this->grid.res(i,j);
+                    this->grid.p(i,j) += lambda*this->grid.search_vector(i,j);
+                    this->grid.res(i,j) -= lambda*this->grid.Asearch_vector(i,j);
+                    alpha_top_new += this->grid.res(i,j)*this->grid.res(i,j);
                 }
             }
 
-            this->computeResidual();
+            // Calculate new search vector
+            lambda = alpha_top_new/alpha_top;
+            for (int i = 1; i < this->grid.imax + 1; i++) {
+                for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.search_vector(i,j) = this->grid.res(i,j) + lambda*this->grid.search_vector(i,j);
+                }
+            }
+            alpha_top = alpha_top_new;
+
+            this->res_norm = (this->grid.po - this->grid.p).norm();
             n++;
         }
     }
