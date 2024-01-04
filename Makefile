@@ -46,6 +46,9 @@ run_benchmarks:
 benchmark_4_screens:
 	cd ../tests && tmux new-session \; split-window -h \; split-window -v \; split-window -v \; select-layout even-horizontal \; send-keys -t 0 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver jacobi' C-m \; send-keys -t 1 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver conjugated_gradient' C-m \; send-keys -t 2 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver multigrid_jacobi' C-m \; send-keys -t 3 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver multigrid_pcg' C-m
 
+gource:
+	gource -s 0.1 -f --auto-skip-seconds 1 --key --highlight-users --hide progress --file-idle-time 0 --max-files 0 --background-colour 000000 --font-size 24 --title "ModSims"
+
 all: build_folder_check configure build install_python_library test
 
 .PHONY: build_folder_check build configure clean
