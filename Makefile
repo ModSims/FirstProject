@@ -43,6 +43,9 @@ clone_vtk:
 run_benchmarks:
 	cd benchmarks && bash run_benchmarks.sh
 
+benchmark_4_screens:
+	cd ../tests && tmux new-session \; split-window -h \; split-window -v \; split-window -v \; select-layout even-horizontal \; send-keys -t 0 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver jacobi' C-m \; send-keys -t 1 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver conjugated_gradient' C-m \; send-keys -t 2 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver multigrid_jacobi' C-m \; send-keys -t 3 'time lid_driven_cavity_2d --imax 64 --jmax 64 --solver multigrid_pcg' C-m
+
 all: build_folder_check configure build install_python_library test
 
 .PHONY: build_folder_check build configure clean
