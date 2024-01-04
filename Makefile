@@ -40,6 +40,9 @@ clone_vtk:
 		git clone --depth 1 --branch v9.1.0 git@github.com:Kitware/VTK.git cpp/extern/vtk; \
 	fi
 
+run_benchmarks:
+	cd benchmarks && bash run_benchmarks.sh
+
 all: build_folder_check configure build install_python_library test
 
 .PHONY: build_folder_check build configure clean

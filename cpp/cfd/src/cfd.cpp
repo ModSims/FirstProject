@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include "cfd.h"
 
 namespace CFD {
@@ -355,6 +356,8 @@ namespace CFD {
             }
 
             this->computeResidual();
+            this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
+            this->it++;
             n++;
         }
     }
@@ -373,6 +376,8 @@ namespace CFD {
             Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
 
             this->computeResidual();
+            this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
+            this->it++;
             n++;
         }
     }
@@ -440,6 +445,8 @@ namespace CFD {
             alpha_top = alpha_top_new;
 
             this->res_norm = (this->grid.po - this->grid.p).norm();
+            this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
+            this->it++;
             n++;
         }
     }
@@ -529,6 +536,8 @@ namespace CFD {
             }
 
             this->res_norm = (this->grid.po - this->grid.p).norm();
+            this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
+            this->it++;
             n++;
         }
     }
@@ -587,6 +596,7 @@ namespace CFD {
 
 
         while(this->t < this->t_end) {
+            this->lastTimestamp = static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count());
             this->selectDtAccordingToStabilityCondition();
             this->setBoundaryConditionsU();
             this->setBoundaryConditionsV();
@@ -599,8 +609,7 @@ namespace CFD {
             (this->*pressure_solver)();
 
             this->computeResidual();
-            this->res_norm_over_time(this->it) = this->res_norm;
-            this->it++;
+            this->res_norm_over_it_without_pressure_solver(this->it_wo_pressure_solver) = this->res_norm;
 
             this->setBoundaryConditionsP();
             this->computeU();
@@ -619,7 +628,10 @@ namespace CFD {
                 std::cout << " VTK saved!!!";
             }
             std::cout << std::endl;
+            this->duration += static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()) - this->lastTimestamp;
+            this->res_norm_over_time(this->duration) = this->res_norm;
             this->t = this->t + this->dt;
+            this->it_wo_pressure_solver++;
         }
 
         this->setBoundaryConditionsU();
@@ -632,7 +644,9 @@ namespace CFD {
         this->setBoundaryConditionsP();
         this->setBoundaryConditionsPGeometry();
 
-        this->res_norm_over_time.conservativeResize(this->it);
+        this->res_norm_over_it_with_pressure_solver.conservativeResize(this->it);
+        this->res_norm_over_it_without_pressure_solver.conservativeResize(this->it_wo_pressure_solver);
+        this->res_norm_over_time.conservativeResize(this->duration);
 
         return;
     }
@@ -641,6 +655,8 @@ namespace CFD {
         Kernel::saveMatrix("u.dat", &this->grid.u_interpolated);
         Kernel::saveMatrix("v.dat", &this->grid.v_interpolated);
         Kernel::saveMatrix("p.dat", &this->grid.p);
-        Kernel::saveVector("residuals.dat", &this->res_norm_over_time);
+        Kernel::saveVector("residuals_with_pressure_solver.dat", &this->res_norm_over_it_with_pressure_solver);
+        Kernel::saveVector("residuals_without_pressure_solver.dat", &this->res_norm_over_it_without_pressure_solver);
+        Kernel::saveVector("residuals_over_time.dat", &this->res_norm_over_time);
     }
 }
