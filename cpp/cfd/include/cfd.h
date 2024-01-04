@@ -123,7 +123,7 @@ namespace CFD {
             void solveWithMultigridJacobi();
             void solveWithConjugatedGradient();
             void solveWithMultigridPCG();
-            void computeResidual();
+            void computeDiscreteL2Norm();
             void computeU();
             void computeV();
             void run();

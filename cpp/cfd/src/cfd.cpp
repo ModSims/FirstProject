@@ -191,9 +191,16 @@ namespace CFD {
         }
     }
 
-    void FluidSimulation::computeResidual() {
-        this->grid.res = this->grid.p - this->grid.po;
-        this->res_norm = this->grid.res.norm();
+    void FluidSimulation::computeDiscreteL2Norm() {
+        this->res_norm = 0.0;
+        for (int i = 0; i < this->grid.p.rows(); i++) {
+            for (int j = 0; j < this->grid.p.cols(); j++) {
+                this->res_norm += pow((this->grid.po(i,j) - this->grid.p(i,j)), 2);
+            }
+        }
+        // Multiply by dx and dy to get the integral
+        this->res_norm *= this->grid.dx * this->grid.dy;
+        this->res_norm = sqrt(this->res_norm);
     }
 
     void FluidSimulation::computeU() {
@@ -355,7 +362,10 @@ namespace CFD {
                 }
             }
 
-            this->computeResidual();
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+
+            this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
@@ -375,7 +385,10 @@ namespace CFD {
 
             Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
 
-            this->computeResidual();
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+
+            this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
@@ -399,6 +412,7 @@ namespace CFD {
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
                 this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                    // Sparse matrix A
                     (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
                     (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
                 );
@@ -418,6 +432,7 @@ namespace CFD {
             for (int i = 1; i < this->grid.imax + 1; i++) {
                 for (int j = 1; j < this->grid.jmax + 1; j++) {
                     this->grid.Asearch_vector(i,j) = (
+                        // Sparse matrix A
                         (1/this->grid.dx2)*(this->grid.search_vector(i+1,j) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i-1,j)) +
                         (1/this->grid.dy2)*(this->grid.search_vector(i,j+1) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i,j-1))
                     );
@@ -444,7 +459,10 @@ namespace CFD {
             }
             alpha_top = alpha_top_new;
 
-            this->res_norm = (this->grid.po - this->grid.p).norm();
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+
+            this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
@@ -471,6 +489,7 @@ namespace CFD {
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
                 this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                    // Sparse matrix A
                     (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
                     (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
                 );
@@ -499,6 +518,7 @@ namespace CFD {
             for (int i = 1; i < this->grid.imax + 1; i++) {
                 for (int j = 1; j < this->grid.jmax + 1; j++) {
                     this->grid.Asearch_vector(i,j) = (
+                        // Sparse matrix A
                         (1/this->grid.dx2)*(this->grid.search_vector(i+1,j) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i-1,j)) +
                         (1/this->grid.dy2)*(this->grid.search_vector(i,j+1) - 2*this->grid.search_vector(i,j) + this->grid.search_vector(i,j-1))
                     );
@@ -535,7 +555,10 @@ namespace CFD {
                 }
             }
 
-            this->res_norm = (this->grid.po - this->grid.p).norm();
+            this->setBoundaryConditionsP();
+            this->setBoundaryConditionsPGeometry();
+
+            this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
@@ -608,10 +631,9 @@ namespace CFD {
                 
             (this->*pressure_solver)();
 
-            this->computeResidual();
+            this->computeDiscreteL2Norm();
             this->res_norm_over_it_without_pressure_solver(this->it_wo_pressure_solver) = this->res_norm;
 
-            this->setBoundaryConditionsP();
             this->computeU();
             this->computeV();
             this->setBoundaryConditionsU();

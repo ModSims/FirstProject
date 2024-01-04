@@ -9,16 +9,16 @@ void Multigrid::vcycle(MultigridHierarchy *hierarchy, int currentLevel, double o
 
     if (currentLevel == 0) {
         // Relax on the coarset grid
-        relax(hierarchy->grids[0].get(), 3, omg);
+        relax(hierarchy->grids[0].get(), 1, omg);
     } else {
         // Relax on the current grid
-        relax(hierarchy->grids[currentLevel].get(), 3, omg);
+        relax(hierarchy->grids[currentLevel].get(), 1, omg);
 
         // Restrict the residual to the coarser grid
         restrict_operator(hierarchy->grids[currentLevel].get(), hierarchy->grids[currentLevel-1].get());
 
         // Initialize the error on the coarser grid with smoother
-        relax(hierarchy->grids[currentLevel-1].get(), 3, omg);
+        relax(hierarchy->grids[currentLevel-1].get(), 1, omg);
 
         // Recursively call vcycle
         vcycle(hierarchy, currentLevel-1, omg);
@@ -30,7 +30,7 @@ void Multigrid::vcycle(MultigridHierarchy *hierarchy, int currentLevel, double o
         hierarchy->grids[currentLevel].get()->p += hierarchy->grids[currentLevel].get()->res;
 
         // Post-smooth on the current grid
-        relax(hierarchy->grids[currentLevel].get(), 3, omg);
+        relax(hierarchy->grids[currentLevel].get(), 1, omg);
     }
 }
 
