@@ -5,7 +5,7 @@ declare -A solvers=( ["jacobi"]="jacobi/"
                     ["multigrid_jacobi"]="multigrid_jacobi/"
                     ["multigrid_pcg"]="multigrid_pcg/" )
 
-declare -a resolutions=("64x64" "128x128")
+declare -a resolutions=("64x64" "128x128", "256x256", "512x512")
 
 run_solver() {
   local solver_name="$1"
