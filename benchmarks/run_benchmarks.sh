@@ -14,7 +14,7 @@ run_solver() {
 
   (
     cd "$solver_dir" || exit 1
-    yes | rm -rf * && lid_driven_cavity_2d --imax $resolution --jmax $resolution --solver "$solver_name" --eps 0.000001 --itermax 10 --omg 1
+    yes | rm -rf * && lid_driven_cavity_2d --imax $resolution --jmax $resolution --solver "$solver_name" --eps 0.000001 --itermax $resolution --omg 1
     echo "$solver_name" > "${solver_name}_${resolution}.completed"
   ) > /dev/null 2>&1
 }
