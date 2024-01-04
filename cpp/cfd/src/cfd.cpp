@@ -144,12 +144,6 @@ namespace CFD {
     }
 
     void FluidSimulation::computeF() {
-        // Boundary conditions
-        for (int j = 0; j < this->grid.jmax + 3; j++) {
-            this->grid.F(0, j) = this->grid.u(0, j);
-            this->grid.F(this->grid.imax, j) = this->grid.u(this->grid.imax, j);
-        }
-
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 2; j++) {
                 this->grid.F(i,j) = this->grid.u(i,j) + this->dt * (
@@ -161,15 +155,14 @@ namespace CFD {
                 );
             }
         }
+        // Boundary conditions
+        for (int j = 0; j < this->grid.jmax + 3; j++) {
+            this->grid.F(0, j) = this->grid.u(0, j);
+            this->grid.F(this->grid.imax, j) = this->grid.u(this->grid.imax, j);
+        }
     }
 
     void FluidSimulation::computeG() {
-        // Boundary conditions
-        for (int i = 0; i < this->grid.imax + 3; i++) {
-            this->grid.G(i, 0) = this->grid.v(i, 0);
-            this->grid.G(i, this->grid.jmax) = this->grid.v(i, this->grid.jmax);
-        }
-
         for (int i = 1; i < this->grid.imax + 2; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
                 this->grid.G(i,j) = this->grid.v(i,j) + this->dt * (
@@ -180,6 +173,11 @@ namespace CFD {
                     ME_Y::vv_y(&this->grid, this, i, j)
                 );
             }
+        }
+        // Boundary conditions
+        for (int i = 0; i < this->grid.imax + 3; i++) {
+            this->grid.G(i, 0) = this->grid.v(i, 0);
+            this->grid.G(i, this->grid.jmax) = this->grid.v(i, this->grid.jmax);
         }
     }
 
