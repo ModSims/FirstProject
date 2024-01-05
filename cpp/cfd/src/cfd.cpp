@@ -497,7 +497,7 @@ namespace CFD {
         }
 
         // Initial guess for error vector
-        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg, 1);
+        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
 
         // Initial search vector
         this->grid.search_vector = this->preconditioner.p;
@@ -533,7 +533,7 @@ namespace CFD {
             }
             
             // New guess for error vector
-            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg, 1);
+            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
 
             // Calculate beta
             for (int i = 1; i < this->grid.imax + 1; i++) {
@@ -633,16 +633,13 @@ namespace CFD {
             this->setBoundaryConditionsV();
             this->setBoundaryConditionsVelocityGeometry();
             this->setBoundaryConditionsPGeometry();
-            // print dt and residual
-            std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm;
             if (this->t - last_saved >= this->save_interval) {
+                std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
                 this->grid.interpolateVelocity();
                 this->setBoundaryConditionsInterpolatedVelocityGeometry();
                 saveVTK(this);
                 last_saved += this->save_interval;
-                std::cout << " VTK saved!!!";
             }
-            std::cout << std::endl;
             this->duration += static_cast<int>(std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now().time_since_epoch()).count()) - this->lastTimestamp;
             this->res_norm_over_time(this->duration) = this->res_norm;
             this->t = this->t + this->dt;
