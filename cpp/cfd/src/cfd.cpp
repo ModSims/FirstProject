@@ -341,7 +341,6 @@ namespace CFD {
     void FluidSimulation::solveWithJacobi() {
         // reset norm check
         this->res_norm = 0.0;
-        int n = 0;
 
         this->setBoundaryConditionsP();
         this->setBoundaryConditionsPGeometry();
@@ -551,6 +550,7 @@ namespace CFD {
 
     void FluidSimulation::run() {
         double last_saved = 0.0;
+        std::string solver_name = "";
 
         saveVTKGeometry(this);
 
@@ -559,10 +559,12 @@ namespace CFD {
 
         if (this->solver_type == SolverType::JACOBI) {
             pressure_solver = &FluidSimulation::solveWithJacobi;
+            solver_name = "Jacobi";
             std::cout << "Solver: Jacobi (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_JACOBI) {
             pressure_solver = &FluidSimulation::solveWithMultigridJacobi;
+            solver_name = "Multigrid Jacobi";
 
             // check if imax and jmax are powers of 2, if not throw exception
             if ((this->grid.imax & (this->grid.imax - 1)) != 0 || (this->grid.jmax & (this->grid.jmax - 1)) != 0) {
@@ -579,10 +581,12 @@ namespace CFD {
         }
         else if (this->solver_type == SolverType::CONJUGATED_GRADIENT) {
             pressure_solver = &FluidSimulation::solveWithConjugatedGradient;
+            solver_name = "Conjugated Gradient";
             std::cout << "Solver: Conjugated Gradient (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_PCG) {
             pressure_solver = &FluidSimulation::solveWithMultigridPCG;
+            solver_name = "Multigrid PCG";
 
             // check if imax and jmax are powers of 2, if not throw exception
             if ((this->grid.imax & (this->grid.imax - 1)) != 0 || (this->grid.jmax & (this->grid.jmax - 1)) != 0) {
@@ -627,7 +631,7 @@ namespace CFD {
             this->setBoundaryConditionsVelocityGeometry();
             this->setBoundaryConditionsPGeometry();
             if (this->t - last_saved >= this->save_interval) {
-                std::cout << "t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
+                std::cout << "Solver: " << solver_name << " t: " << this->t << " dt: " << this->dt << " res: " << this->res_norm << std::endl;
                 this->grid.interpolateVelocity();
                 this->setBoundaryConditionsInterpolatedVelocityGeometry();
                 saveVTK(this);
