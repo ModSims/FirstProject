@@ -341,6 +341,7 @@ namespace CFD {
     void FluidSimulation::solveWithJacobi() {
         // reset norm check
         this->res_norm = 0.0;
+        int n = 0;
 
         this->setBoundaryConditionsP();
         this->setBoundaryConditionsPGeometry();
@@ -354,7 +355,7 @@ namespace CFD {
                                         this->omg * 0.25 * (
                                             this->grid.p(i - 1, j) + this->grid.p(i + 1, j) +
                                             this->grid.p(i, j - 1) + this->grid.p(i, j + 1)
-                                            - this->grid.dxdy * (this->grid.RHS(i, j))
+                                            - this->grid.dx2dy2 * (this->grid.RHS(i, j))
                                         ) / (1 + 2 * (this->grid.dx2 + this->grid.dy2));
                 }
             }
@@ -558,7 +559,7 @@ namespace CFD {
 
         if (this->solver_type == SolverType::JACOBI) {
             pressure_solver = &FluidSimulation::solveWithJacobi;
-            std::cout << "Solver: Jacobi" << std::endl;
+            std::cout << "Solver: Jacobi (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_JACOBI) {
             pressure_solver = &FluidSimulation::solveWithMultigridJacobi;
@@ -574,11 +575,11 @@ namespace CFD {
 
             this->multigrid_hierarchy = new MultigridHierarchy(levels, &this->grid);
 
-            std::cout << "Solver: Multigrid Jacobi" << std::endl;
+            std::cout << "Solver: Multigrid Jacobi (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else if (this->solver_type == SolverType::CONJUGATED_GRADIENT) {
             pressure_solver = &FluidSimulation::solveWithConjugatedGradient;
-            std::cout << "Solver: Conjugated Gradient" << std::endl;
+            std::cout << "Solver: Conjugated Gradient (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_PCG) {
             pressure_solver = &FluidSimulation::solveWithMultigridPCG;
@@ -597,7 +598,7 @@ namespace CFD {
             this->multigrid_hierarchy = new MultigridHierarchy(levels, &this->grid);
             this->multigrid_hierarchy_preconditioner = new MultigridHierarchy(levels, &this->preconditioner);
 
-            std::cout << "Solver: Multigrid PCG" << std::endl;
+            std::cout << "Solver: Multigrid PCG (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else {
             throw std::invalid_argument("Invalid solver type");

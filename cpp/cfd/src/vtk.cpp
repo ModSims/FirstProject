@@ -5,6 +5,9 @@
 #include <vtkDoubleArray.h>
 #include <vtkPointData.h>
 #include <vtkXMLStructuredGridWriter.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataWriter.h>
+#include <vtkCellArray.h>
 
 void CFD::saveVTK(FluidSimulation* sim) {
     vtkSmartPointer<vtkStructuredGrid> vtk_grid = vtkSmartPointer<vtkStructuredGrid>::New();
@@ -54,46 +57,5 @@ void CFD::saveVTK(FluidSimulation* sim) {
 }
 
 void CFD::saveVTKGeometry(FluidSimulation* sim) {
-    vtkSmartPointer<vtkStructuredGrid> vtk_grid = vtkSmartPointer<vtkStructuredGrid>::New();
-    vtk_grid->SetDimensions(sim->imax, sim->jmax, 1);
-
-    // Create vtk points
-    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-    for (int j = 0; j < sim->jmax; ++j) {
-        for (int i = 0; i < sim->imax; ++i) {
-            points->InsertNextPoint(i * sim->grid.dx, j * sim->grid.dy, 0);
-        }
-    }
-
-    vtk_grid->SetPoints(points);
-
-    // Add geometry
-    vtkSmartPointer<vtkDoubleArray> geometry_array = vtkSmartPointer<vtkDoubleArray>::New();
-    geometry_array->SetNumberOfComponents(1);
-    geometry_array->SetName("Geometry");
-
-    bool has_geometry = false;
-
-    for (int j = 0; j < sim->jmax; ++j) {
-        for (int i = 0; i < sim->imax; ++i) {
-            if ((sim->grid.flag_field(i, j) & FlagFieldMask::MASK_CELL_TYPE) == (FlagFieldMask::CELL_OBSTACLE & FlagFieldMask::MASK_CELL_TYPE)) {
-                geometry_array->InsertNextValue(1.0);
-                has_geometry = true;
-            } else {
-                geometry_array->InsertNextValue(0.0);
-            
-            }
-        }
-    }
-
-    if (has_geometry) {
-        vtk_grid->GetPointData()->AddArray(geometry_array);
-
-        vtkSmartPointer<vtkXMLStructuredGridWriter> writer = vtkSmartPointer<vtkXMLStructuredGridWriter>::New();
-        char filename[100];
-        sprintf(filename, "geometry.vts");
-        writer->SetFileName(filename);
-        writer->SetInputData(vtk_grid);
-        writer->Write();
-    }
+    // TODO: Implement
 }

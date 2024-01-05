@@ -38,7 +38,7 @@ namespace CFD {
             dy = ylength / jmax;
             dx2 = dx * dx;
             dy2 = dy * dy;
-            dxdy = dx * dy;
+            dx2dy2 = dx2 * dy2;
         }
         double findMaxAbsoluteU() const;
         double findMaxAbsoluteV() const;
@@ -47,7 +47,7 @@ namespace CFD {
         double dy;
         double dx2;
         double dy2;
-        double dxdy;
+        double dx2dy2;
         int imax;
         int jmax;
         double xlength;
