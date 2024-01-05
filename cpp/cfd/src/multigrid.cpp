@@ -68,12 +68,13 @@ void Multigrid::relax(StaggeredGrid *grid, int numSweeps, double omg) {
         for (int i = 1; i <= grid->imax; i++) {
             for (int j = 1; j <= grid->jmax; j++) {
                 grid->po(i, j) = grid->p(i, j);
-                grid->p(i, j) = (1 - omg) * grid->p(i, j) +
-                                    omg * 0.25 * (
-                                        grid->p(i - 1, j) + grid->p(i + 1, j) +
-                                        grid->p(i, j - 1) + grid->p(i, j + 1)
-                                        - grid->dx2dy2 * (grid->RHS(i, j))
-                                    ) / (1 + 2 * (grid->dx2 + grid->dy2));
+                grid->p(i, j) = (
+                    (1/(-2*grid->dx2 - 2*grid->dy2)) // 1/Aii
+                    *
+                    (
+                        grid->RHS(i,j)*grid->dx2dy2 - grid->dy2*(grid->p(i+1,j) + grid->p(i-1,j)) - grid->dx2*(grid->p(i,j+1) + grid->p(i,j-1))
+                    )
+                );
                 grid->res(i, j) = grid->po(i, j) - grid->p(i, j);
             }
         }

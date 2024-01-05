@@ -350,12 +350,13 @@ namespace CFD {
             for (int i = 1; i <= this->grid.imax; i++) {
                 for (int j = 1; j <= this->grid.jmax; j++) {
                     this->grid.po(i,j) = this->grid.p(i,j); // smart residual preparation
-                    this->grid.p(i, j) = (1 - this->omg) * this->grid.p(i, j) +
-                                        this->omg * 0.25 * (
-                                            this->grid.p(i - 1, j) + this->grid.p(i + 1, j) +
-                                            this->grid.p(i, j - 1) + this->grid.p(i, j + 1)
-                                            - this->grid.dx2dy2 * (this->grid.RHS(i, j))
-                                        ) / (1 + 2 * (this->grid.dx2 + this->grid.dy2));
+                    this->grid.p(i, j) = (
+                        (1/(-2*this->grid.dx2 - 2*this->grid.dy2)) // 1/Aii
+                        *
+                        (
+                            this->grid.RHS(i,j)*this->grid.dx2dy2 - this->grid.dy2*(this->grid.p(i+1,j) + this->grid.p(i-1,j)) - this->grid.dx2*(this->grid.p(i,j+1) + this->grid.p(i,j-1))
+                        )
+                    );
                 }
             }
 
