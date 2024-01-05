@@ -48,7 +48,6 @@ namespace CFD {
             double tau = 0.5;
             double eps = 1e-3;
             double omg = 1.0;
-            int itermax = 100;
             double alpha = 0.9;
             double Re = 100.0;
             double t = 0;
@@ -70,7 +69,6 @@ namespace CFD {
                 tau = params.tau;
                 eps = params.eps;
                 omg = params.omg;
-                itermax = params.itermax;
                 alpha = params.alpha;
                 Re = params.Re;
                 t = params.t;
@@ -91,7 +89,6 @@ namespace CFD {
             double tau;
             double eps;
             double omg;
-            int itermax;
             double alpha;
             double Re;
             double t;

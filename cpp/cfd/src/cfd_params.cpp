@@ -31,7 +31,6 @@ FluidParams::FluidParams(std::string name, int argc, char* argv[])
     this->argument_parser.add_argument("-u", "--tau").help("tau").default_value(this->tau).action([](const std::string& value) { return std::stod(value); });
     this->argument_parser.add_argument("-e", "--eps").help("eps").default_value(this->eps).action([](const std::string& value) { return std::stod(value); });
     this->argument_parser.add_argument("-o", "--omg").help("omg").default_value(this->omg).action([](const std::string& value) { return std::stod(value); });
-    this->argument_parser.add_argument("-m", "--itermax").help("itermax").default_value(this->itermax).action([](const std::string& value) { return std::stoi(value); });
     this->argument_parser.add_argument("-a", "--alpha").help("alpha").default_value(this->alpha).action([](const std::string& value) { return std::stod(value); });
     this->argument_parser.add_argument("-r", "--Re").help("Re").default_value(this->Re).action([](const std::string& value) { return std::stod(value); });
     this->argument_parser.add_argument("-t", "--t").help("t").default_value(this->t).action([](const std::string& value) { return std::stod(value); });
@@ -57,7 +56,6 @@ FluidParams::FluidParams(std::string name, int argc, char* argv[])
     this->tau = this->argument_parser.get<double>("--tau"),
     this->eps = this->argument_parser.get<double>("--eps"),
     this->omg = this->argument_parser.get<double>("--omg"),
-    this->itermax = this->argument_parser.get<int>("--itermax"),
     this->alpha = this->argument_parser.get<double>("--alpha"),
     this->Re = this->argument_parser.get<double>("--Re"),
     this->t = this->argument_parser.get<double>("--t"),

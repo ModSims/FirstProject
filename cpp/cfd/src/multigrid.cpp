@@ -2,35 +2,29 @@
 
 using namespace CFD;
 
-void Multigrid::vcycle(MultigridHierarchy *hierarchy, int currentLevel, double omg) {
+void Multigrid::vcycle(MultigridHierarchy *hierarchy, int currentLevel, double omg, int numSweeps) {
     // Briggs, Multigrid Tutorial, p. 41
     // reusing p and RHS for error and residual for simplicity and memory efficiency
     // (Ae = res) and (Ap = RHS)
 
     if (currentLevel == 0) {
         // Relax on the coarset grid
-        relax(hierarchy->grids[0].get(), 1, omg);
+        relax(hierarchy->grids[0].get(), numSweeps, omg);
     } else {
         // Relax on the current grid
-        relax(hierarchy->grids[currentLevel].get(), 1, omg);
+        relax(hierarchy->grids[currentLevel].get(), numSweeps, omg);
 
         // Restrict the residual to the coarser grid
         restrict_operator(hierarchy->grids[currentLevel].get(), hierarchy->grids[currentLevel-1].get());
 
-        // Initialize the error on the coarser grid with smoother
-        relax(hierarchy->grids[currentLevel-1].get(), 1, omg);
-
         // Recursively call vcycle
-        vcycle(hierarchy, currentLevel-1, omg);
+        vcycle(hierarchy, currentLevel-1, omg, numSweeps);
 
         // Prolongate the error to the finer grid
         prolongate_operator(hierarchy->grids[currentLevel-1].get(), hierarchy->grids[currentLevel].get());
 
-        // correct the current approximation with the error on the current grid
-        hierarchy->grids[currentLevel].get()->p += hierarchy->grids[currentLevel].get()->res;
-
         // Post-smooth on the current grid
-        relax(hierarchy->grids[currentLevel].get(), 1, omg);
+        relax(hierarchy->grids[currentLevel].get(), numSweeps, omg);
     }
 }
 
@@ -54,14 +48,13 @@ void Multigrid::prolongate_operator(const StaggeredGrid *coarse, StaggeredGrid *
     // Prolongate with linear interpolation
     // Briggs, Multigrid Tutorial, p. 35
 
-    // Prolongate p^{2h} to res^h
-    fine->res.setZero();
+    // Prolongate p^{2h} to p^{2h} adding p^{2h}
     for (int i = 0; i <= coarse->imax; i++) {
         for (int j = 0; j <= coarse->jmax; j++) {
-            fine->res(2*i,2*j) = coarse->p(i,j);
-            fine->res(2*i+1,2*j) = 0.5 * (coarse->p(i,j) + coarse->p(i+1,j));
-            fine->res(2*i,2*j+1) = 0.5 * (coarse->p(i,j) + coarse->p(i,j+1));
-            fine->res(2*i+1,2*j+1) = 0.25 * (coarse->p(i,j) + coarse->p(i+1,j) + coarse->p(i,j+1) + coarse->p(i+1,j+1));
+            fine->p(2*i,2*j) += coarse->p(i,j);
+            fine->p(2*i+1,2*j) += 0.5 * (coarse->p(i,j) + coarse->p(i+1,j));
+            fine->p(2*i,2*j+1) += 0.5 * (coarse->p(i,j) + coarse->p(i,j+1));
+            fine->p(2*i+1,2*j+1) += 0.25 * (coarse->p(i,j) + coarse->p(i+1,j) + coarse->p(i,j+1) + coarse->p(i+1,j+1));
         }
     }
 }
@@ -74,12 +67,14 @@ void Multigrid::relax(StaggeredGrid *grid, int numSweeps, double omg) {
         // Jacobi smoother with relaxation factor (omega)
         for (int i = 1; i <= grid->imax; i++) {
             for (int j = 1; j <= grid->jmax; j++) {
+                grid->po(i, j) = grid->p(i, j);
                 grid->p(i, j) = (1 - omg) * grid->p(i, j) +
                                     omg * 0.25 * (
                                         grid->p(i - 1, j) + grid->p(i + 1, j) +
                                         grid->p(i, j - 1) + grid->p(i, j + 1)
                                         - grid->dxdy * (grid->RHS(i, j))
                                     ) / (1 + 2 * (grid->dx2 + grid->dy2));
+                grid->res(i, j) = grid->p(i, j) - grid->po(i, j);
             }
         }
     }

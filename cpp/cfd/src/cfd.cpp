@@ -343,9 +343,10 @@ namespace CFD {
         this->res_norm = 0.0;
         int n = 0;
 
-        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
+
+        while (this->res_norm > this->eps || this->res_norm == 0) {
             this->grid.po = this->grid.p;
 
             // Jacobi smoother with relaxation factor (omega)
@@ -360,14 +361,14 @@ namespace CFD {
                 }
             }
 
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
-
             this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
         }
+
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
     }
 
 
@@ -376,21 +377,22 @@ namespace CFD {
         this->res_norm = 0.0;
         int n = 0;
 
-        while ((this->res_norm > this->eps || this->res_norm == 0) && n < this->itermax) {
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
+
+        while (this->res_norm > this->eps || this->res_norm == 0) {
             this->grid.po = this->grid.p;
 
-            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
-
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
+            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg, 1);
 
             this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
         }
+
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
     }
 
     void FluidSimulation::solveWithConjugatedGradient() {
@@ -421,8 +423,6 @@ namespace CFD {
         }
 
         while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
             this->grid.po = this->grid.p;
 
             alpha_bottom = 0.0;
@@ -457,14 +457,13 @@ namespace CFD {
             }
             alpha_top = alpha_top_new;
 
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
-
             this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
         }
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
     }
 
     void FluidSimulation::solveWithMultigridPCG() {
@@ -498,14 +497,12 @@ namespace CFD {
         }
 
         // Initial guess for error vector
-        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
+        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg, 1);
 
         // Initial search vector
         this->grid.search_vector = this->preconditioner.p;
 
         while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
             this->grid.po = this->grid.p;
 
             alpha_top = 0.0;
@@ -536,7 +533,7 @@ namespace CFD {
             }
             
             // New guess for error vector
-            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg);
+            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg, 1);
 
             // Calculate beta
             for (int i = 1; i < this->grid.imax + 1; i++) {
@@ -553,14 +550,13 @@ namespace CFD {
                 }
             }
 
-            this->setBoundaryConditionsP();
-            this->setBoundaryConditionsPGeometry();
-
             this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
             n++;
         }
+        this->setBoundaryConditionsP();
+        this->setBoundaryConditionsPGeometry();
     }
 
     void FluidSimulation::run() {
@@ -629,7 +625,6 @@ namespace CFD {
                 
             (this->*pressure_solver)();
 
-            this->computeDiscreteL2Norm();
             this->res_norm_over_it_without_pressure_solver(this->it_wo_pressure_solver) = this->res_norm;
 
             this->computeU();
