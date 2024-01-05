@@ -110,6 +110,7 @@ namespace CFD {
             MultigridHierarchy *multigrid_hierarchy;
 
             // Preconditioner Conjugated Gradient components
+            MultigridHierarchy *multigrid_hierarchy_preconditioner;
             StaggeredGrid preconditioner;
 
             void selectDtAccordingToStabilityCondition();
@@ -137,4 +138,5 @@ namespace CFD {
 
     // Functions
     void saveVTK(FluidSimulation* sim);
+    void saveVTKGeometry(FluidSimulation* sim);
 }

@@ -55,10 +55,11 @@ void KarmanVortexStreet2D::run() {
     // Manage Flag Field with Bitmasks
     // Square in the middle with fifth of the size of the domain
     int width = floor(this->grid.jmax / 4.0);
-    int distanceTop = floor((this->grid.jmax - width) / 2.0);
-    int distanceBottom = distanceTop + width;
-    int distanceLeft = distanceTop;
-    int distanceRight = distanceBottom;
+    int height = floor(this->grid.jmax / 8.0);
+    int distanceTop = floor((this->grid.jmax - height) / 2.0);
+    int distanceBottom = distanceTop + height;
+    int distanceLeft = floor((this->grid.jmax - width) / 2.0);
+    int distanceRight = distanceLeft + width;
     for (int i = 1; i < this->grid.imax + 1; i++) {
         for (int j = 1; j < this->grid.jmax + 1; j++) {
 

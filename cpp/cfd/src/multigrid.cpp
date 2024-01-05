@@ -74,7 +74,7 @@ void Multigrid::relax(StaggeredGrid *grid, int numSweeps, double omg) {
                                         grid->p(i, j - 1) + grid->p(i, j + 1)
                                         - grid->dxdy * (grid->RHS(i, j))
                                     ) / (1 + 2 * (grid->dx2 + grid->dy2));
-                grid->res(i, j) = grid->p(i, j) - grid->po(i, j);
+                grid->res(i, j) = grid->po(i, j) - grid->p(i, j);
             }
         }
     }

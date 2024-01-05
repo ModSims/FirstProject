@@ -5,8 +5,8 @@ declare -A solvers=( ["jacobi"]="jacobi/"
                     ["multigrid_jacobi"]="multigrid_jacobi/"
                     ["multigrid_pcg"]="multigrid_pcg/" )
 
-declare -a resolutions=("64" "128" "256" "512" "1024" "2048" "4096" "8192" "16384")
-declare -a REs=("100" "200" "400" "800" "1600")
+declare -a resolutions=("64" "128" "256" "512" "1024")
+declare -a REs=("100" "200" "400" "800" "1000")
 
 run_solver() {
   local solver_name="$1"
@@ -60,8 +60,8 @@ for resolution in "${resolutions[@]}"; do
       echo "Running ${solvers[$solver_name]} for $resolution x $resolution with Re=$RE"
       run_solver "$solver_name" "$resolution" "$RE" &
     done
-    wait
   done
+  wait
 done
 
 # Wait for all background processes to finish

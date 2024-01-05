@@ -191,8 +191,8 @@ namespace CFD {
 
     void FluidSimulation::computeDiscreteL2Norm() {
         this->res_norm = 0.0;
-        for (int i = 0; i < this->grid.p.rows(); i++) {
-            for (int j = 0; j < this->grid.p.cols(); j++) {
+        for (int i = 1; i < this->grid.imax + 1; i++) {
+            for (int j = 1; j < this->grid.jmax + 1; j++) {
                 this->res_norm += pow((this->grid.po(i,j) - this->grid.p(i,j)), 2);
             }
         }
@@ -341,17 +341,15 @@ namespace CFD {
     void FluidSimulation::solveWithJacobi() {
         // reset norm check
         this->res_norm = 0.0;
-        int n = 0;
 
         this->setBoundaryConditionsP();
         this->setBoundaryConditionsPGeometry();
 
         while (this->res_norm > this->eps || this->res_norm == 0) {
-            this->grid.po = this->grid.p;
-
             // Jacobi smoother with relaxation factor (omega)
             for (int i = 1; i <= this->grid.imax; i++) {
                 for (int j = 1; j <= this->grid.jmax; j++) {
+                    this->grid.po(i,j) = this->grid.p(i,j); // smart residual preparation
                     this->grid.p(i, j) = (1 - this->omg) * this->grid.p(i, j) +
                                         this->omg * 0.25 * (
                                             this->grid.p(i - 1, j) + this->grid.p(i + 1, j) +
@@ -364,7 +362,6 @@ namespace CFD {
             this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
-            n++;
         }
 
         this->setBoundaryConditionsP();
@@ -375,20 +372,17 @@ namespace CFD {
     void FluidSimulation::solveWithMultigridJacobi() {
         // reset norm check
         this->res_norm = 0.0;
-        int n = 0;
 
         this->setBoundaryConditionsP();
         this->setBoundaryConditionsPGeometry();
 
         while (this->res_norm > this->eps || this->res_norm == 0) {
-            this->grid.po = this->grid.p;
 
             Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, this->omg, 1);
 
             this->computeDiscreteL2Norm();
             this->res_norm_over_it_with_pressure_solver(this->it) = this->res_norm;
             this->it++;
-            n++;
         }
 
         this->setBoundaryConditionsP();
@@ -423,8 +417,6 @@ namespace CFD {
         }
 
         while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
-            this->grid.po = this->grid.p;
-
             alpha_bottom = 0.0;
             // Laplacian operator of grid.res, because of dot product of <res, Asearch_vector>, A-Matrix is the laplacian operator
             for (int i = 1; i < this->grid.imax + 1; i++) {
@@ -442,6 +434,7 @@ namespace CFD {
             alpha_top_new = 0.0;
             for (int i = 1; i < this->grid.imax + 1; i++) {
                 for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.po(i,j) = this->grid.p(i,j); // smart residual preparation
                     this->grid.p(i,j) += lambda*this->grid.search_vector(i,j);
                     this->grid.res(i,j) -= lambda*this->grid.Asearch_vector(i,j);
                     alpha_top_new += this->grid.res(i,j)*this->grid.res(i,j);
@@ -482,14 +475,11 @@ namespace CFD {
 
         int maxiterations = std::max(this->grid.imax, this->grid.jmax);
 
+        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
+
         // Initial residual vector of Ax=b
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.res(i,j) = this->grid.RHS(i,j) - (
-                    // Sparse matrix A
-                    (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
-                    (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
-                );
                 // copy residual to preconditioner and reset grids
                 this->preconditioner.RHS(i,j) = this->grid.res(i,j);
                 this->preconditioner.p(i,j) = 0.0;
@@ -497,14 +487,12 @@ namespace CFD {
         }
 
         // Initial guess for error vector
-        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
+        Multigrid::vcycle(this->multigrid_hierarchy_preconditioner, this->multigrid_hierarchy_preconditioner->numLevels() - 1, 1, 1);
 
         // Initial search vector
         this->grid.search_vector = this->preconditioner.p;
 
         while ((this->res_norm > this->eps || this->res_norm == 0) && n < maxiterations) {
-            this->grid.po = this->grid.p;
-
             alpha_top = 0.0;
             alpha_bottom = 0.0;
 
@@ -526,6 +514,7 @@ namespace CFD {
             // Update pressure and new residual
             for (int i = 1; i < this->grid.imax + 1; i++) {
                 for (int j = 1; j < this->grid.jmax + 1; j++) {
+                    this->grid.po(i,j) = this->grid.p(i,j); // smart residual preparation
                     this->grid.p(i,j) += alpha*this->grid.search_vector(i,j);
                     this->grid.res(i,j) -= alpha*this->grid.Asearch_vector(i,j);
                     this->preconditioner.RHS(i,j) = this->grid.res(i,j);
@@ -533,7 +522,7 @@ namespace CFD {
             }
             
             // New guess for error vector
-            Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
+            Multigrid::vcycle(this->multigrid_hierarchy_preconditioner, this->multigrid_hierarchy_preconditioner->numLevels() - 1, 1, 1);
 
             // Calculate beta
             for (int i = 1; i < this->grid.imax + 1; i++) {
@@ -561,6 +550,8 @@ namespace CFD {
 
     void FluidSimulation::run() {
         double last_saved = 0.0;
+
+        saveVTKGeometry(this);
 
         // Function pointer to solver
         void (CFD::FluidSimulation::*pressure_solver)();
@@ -603,7 +594,8 @@ namespace CFD {
 
             this->preconditioner = StaggeredGrid(this->grid.imax, this->grid.jmax, this->grid.xlength, this->grid.ylength);
 
-            this->multigrid_hierarchy = new MultigridHierarchy(levels, &this->preconditioner);
+            this->multigrid_hierarchy = new MultigridHierarchy(levels, &this->grid);
+            this->multigrid_hierarchy_preconditioner = new MultigridHierarchy(levels, &this->preconditioner);
 
             std::cout << "Solver: Multigrid PCG" << std::endl;
         }
