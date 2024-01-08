@@ -1,0 +1,2 @@
+Solver,Resolution,RE,Elapsed Time,Memory Consumed
+multigrid_pcg,128,400,52.342450185,257032

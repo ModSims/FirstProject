@@ -54,13 +54,12 @@ void KarmanVortexStreet2D::setBoundaryConditionsP() {
 void KarmanVortexStreet2D::run() {
     // Manage Flag Field with Bitmasks
     // Square in the middle with fifth of the size of the domain
-    int height = floor(this->grid.jmax / 4.0);
-    int distanceTop = floor((this->grid.jmax - height) / 2.0);
-    int distanceBottom = distanceTop + height;
-
     int width = floor(this->grid.jmax / 8.0);
-    int distanceLeft = floor((this->grid.imax - width) / 8.0);
-    int distanceRight = distanceLeft + width;
+    int distanceTop = floor((this->grid.jmax - width) / 2.0);
+    int distanceBottom = distanceTop + width;
+    int distanceLeft = distanceTop;
+    int distanceRight = distanceBottom;
+
     for (int i = 1; i < this->grid.imax + 1; i++) {
         for (int j = 1; j < this->grid.jmax + 1; j++) {
 
@@ -101,6 +100,12 @@ void KarmanVortexStreet2D::run() {
         std::cout << std::endl;
     }
     std::exit(0);*/
+
+    for (int i = 0; i < this->grid.imax + 2; i++) {
+        for (int j = 0; j < this->grid.jmax + 3; j++) {
+            this->grid.u(i, j) = 1.0;
+        }
+    }
 
     FluidSimulation::run();
 

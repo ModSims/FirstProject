@@ -403,15 +403,18 @@ namespace CFD {
         double alpha_top_new = 0.0;
         int maxiterations = std::max(this->grid.imax, this->grid.jmax);
 
+        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
+
         // Initial residual vector of Ax=b
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
-                this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                /*without initiaul guess
+                  this->grid.res(i,j) = this->grid.RHS(i,j) - (
                     // Sparse matrix A
                     (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
                     (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
-                );
-                // copy residual to search_vector
+                );*/
+                // copy residual to search_vector (with initial guess from multigrid)
                 this->grid.search_vector(i,j) = this->grid.res(i,j);
                 alpha_top += this->grid.res(i,j)*this->grid.res(i,j);
             }
@@ -476,12 +479,17 @@ namespace CFD {
 
         int maxiterations = std::max(this->grid.imax, this->grid.jmax);
 
-        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1);
+        Multigrid::vcycle(this->multigrid_hierarchy, this->multigrid_hierarchy->numLevels() - 1, 1, 1); // initial guess with multigrid
 
         // Initial residual vector of Ax=b
         for (int i = 1; i < this->grid.imax + 1; i++) {
             for (int j = 1; j < this->grid.jmax + 1; j++) {
-                // copy residual to preconditioner and reset grids
+                /* copy residual to preconditioner and reset grids (without initiaul guess)
+                this->grid.res(i,j) = this->grid.RHS(i,j) - (
+                    // Sparse matrix A
+                    (1/this->grid.dx2)*(this->grid.p(i+1,j) - 2*this->grid.p(i,j) + this->grid.p(i-1,j)) +
+                    (1/this->grid.dy2)*(this->grid.p(i,j+1) - 2*this->grid.p(i,j) + this->grid.p(i,j-1))
+                );*/
                 this->preconditioner.RHS(i,j) = this->grid.res(i,j);
                 this->preconditioner.p(i,j) = 0.0;
             }
@@ -583,6 +591,17 @@ namespace CFD {
         else if (this->solver_type == SolverType::CONJUGATED_GRADIENT) {
             pressure_solver = &FluidSimulation::solveWithConjugatedGradient;
             solver_name = "Conjugated Gradient";
+
+            // check if imax and jmax are powers of 2, if not throw exception
+            if ((this->grid.imax & (this->grid.imax - 1)) != 0 || (this->grid.jmax & (this->grid.jmax - 1)) != 0) {
+                throw std::invalid_argument("imax and jmax must be powers of 2");
+            }
+
+            int imax_levels = std::log2(this->grid.imax);
+            int jmax_levels = std::log2(this->grid.jmax);
+            int levels = std::min(imax_levels, jmax_levels);
+
+            this->multigrid_hierarchy = new MultigridHierarchy(levels, &this->grid);
             std::cout << "Solver: Conjugated Gradient (" << this->grid.imax << "x" << this->grid.jmax << ")" << std::endl;
         }
         else if (this->solver_type == SolverType::MULTIGRID_PCG) {

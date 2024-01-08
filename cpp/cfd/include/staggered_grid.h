@@ -28,7 +28,7 @@ namespace CFD {
             G = MatrixXd::Zero(imax + 3, jmax + 2);
             u_interpolated = MatrixXd::Zero(imax + 2, jmax + 2);
             v_interpolated = MatrixXd::Zero(imax + 2, jmax + 2);
-            flag_field = MatrixXi::Zero(imax + 2, jmax + 2);
+            flag_field = MatrixXi::Ones(imax + 2, jmax + 2);
 
             // Conjugated Gradient components
             search_vector = MatrixXd::Zero(imax + 2, jmax + 2);

@@ -5,8 +5,8 @@ declare -A solvers=( ["jacobi"]="jacobi/"
                     ["multigrid_jacobi"]="multigrid_jacobi/"
                     ["multigrid_pcg"]="multigrid_pcg/" )
 
-declare -a resolutions=("64" "128" "256" "512" "1024")
-declare -a REs=("100" "200" "400" "800" "1000")
+declare -a resolutions=("64" "128" "256")
+declare -a REs=("100" "400" "1000")
 
 run_solver() {
   local solver_name="$1"
@@ -25,7 +25,7 @@ run_solver() {
     start_time=$(date +%s.%N)
 
     # Run the solver and capture memory usage
-    lid_driven_cavity_2d --imax "$resolution" --jmax "$resolution" --solver "$solver_name" --eps 0.000001 --Re "$RE" --omg 1.7 &
+    lid_driven_cavity_2d --imax "$resolution" --jmax "$resolution" --solver "$solver_name" --eps 0.000001 --Re "$RE" --omg 1.7 --t_end 50 &
 
     # Capture the process ID of the background job
     pid=$!
